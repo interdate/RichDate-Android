@@ -51,6 +51,8 @@ var app = {
 	init: function(){
 		//navigator.splashscreen.hide();
 
+		document.addEventListener("pause", navigator.app.exitApp, false);
+
 		app.ajaxSetup();		
 		app.chooseMainPage();		
 		app.pictureSource = navigator.camera.PictureSourceType;
@@ -111,7 +113,10 @@ var app = {
 			
 			complete: function(response, status, jqXHR){
 				//alert(response.status);
+				console.log("AJAX COMPLETE");
 				app.stopLoading();
+
+
 			},
 		});		
 	},
@@ -146,11 +151,11 @@ var app = {
 		app.exit = true;
 		
 		$.ajax({				
-			url: app.apiUrl + '/api/v3/user/logout',			
-			success: function(data, status){	
+			url: app.apiUrl + '/api/v4/user/logout',
+			success: function(data, status){
 				//alert(JSON.stringify(data));
-				if(data.logout == 1){					
-					app.logged = false;					
+				if(data.logout == 1){
+					app.logged = false;
 					app.positionSaved = false;
 					window.localStorage.setItem("userId", "");
 					window.localStorage.setItem("user", "");
@@ -158,15 +163,15 @@ var app = {
 					app.UIHandler();
 					app.ajaxSetup();
 					app.stopLoading();
-				}				
+				}
 			}
 		});
 	},
-	
+
 	UIHandler: function(){
-		
+
 		document.removeEventListener("backbutton", app.back, false);
-		
+
 		if(app.logged === false){
 
 			var userInput = decodeURIComponent( escape(window.localStorage.getItem("userInput")) );
@@ -175,7 +180,7 @@ var app = {
 
 			$('.appPage').hide();
 			$('.new_mes').hide();
-			$("#login_page").show();  
+			$("#login_page").show();
 			$('#back').hide();
 			$('#logout').hide();
 			$('#contact').hide();
@@ -186,22 +191,19 @@ var app = {
 		}
 		else{
 			$('.appPage').hide();
-			$("#main_page").show();					
+			$("#main_page").show();
 			$('#back').hide();
 			$('#logout').show();
 			$('#sign_up').hide();
-			//$('#contact').show();	
+			//$('#contact').show();
 			if(app.logged == 'nopay'){
 				app.currentPageId = 'main_page';
 				app.currentPageWrapper = $('#'+app.currentPageId);
-				app.currentPageWrapper.find('.mainBut').hide();	
+				app.currentPageWrapper.find('.mainBut').hide();
 				app.getSubscription();
-				app.checkloggetStatus();
-				//app.currentPageWrapper.find('#bannerLink').click();
 			}
 			if(app.logged == 'noimg'){
 				app.getRegStep();
-				//app.checkloggetStatus();
 			}
 			if(app.logged === true){
 				app.currentPageId = 'main_page';
@@ -210,72 +212,41 @@ var app = {
 			}
 		}
 	},
-	
-	checkloggetStatus: function(){
-		if(app.logged !== true&&app.logged !== false){
-			$.ajax({
-				url: app.apiUrl + '/api/v3/user/login',
-				type: 'Get',
-				error: function(response){				
-					//alert(JSON.stringify(response));
-				},
-				statusCode:{
-					403: function(response, status, xhr){
-						app.logged = false;
-						app.UIHandler();						
-					}
-				},
-				success: function(data){
-					//alert(data.logged);
-					if(data.logged === true){
-						app.logged = data.logged;
-						app.chooseMainPage();
-					}
-					refreshloggetStatus = setTimeout(app.checkloggetStatus, 1000);
-					
-				}
-			});
-		}
-		else{
-			clearTimeout(refreshloggetStatus);			
-		}
-		
-	},
-	
+
 	loggedUserInit: function(){
 		app.searchFuncsMainCall = true;
 		app.setBannerDestination();
-		app.checkNewMessages();					
+		app.checkNewMessages();
 		//app.pushNotificationInit();
 		app.sendUserPosition();
 	},
-	
+
 	startLoading: function(){
 		navigator.notification.activityStart(
-				'טעינה', 
+				'טעינה',
 				'אנא המתן...');
 	},
-	
+
 	stopLoading: function(){
 		navigator.notification.activityStop();
-	},	
-	
+	},
+
 	chooseMainPage: function(){
-		
+
 		pagesTracker = [];
-		pagesTracker.push('main_page');	
+		pagesTracker.push('main_page');
 		app.startLoading();
 		app.exit = false;
-	
-		$.ajax({ 
-			url: app.apiUrl + '/api/v3/user/login',
-			error: function(response){				
+
+		$.ajax({
+			url: app.apiUrl + '/api/v4/user/login',
+			error: function(response){
 				//alert(JSON.stringify(response));
 			},
 			statusCode:{
 				403: function(response, status, xhr){
 					app.logged = false;
-					app.UIHandler();						
+					app.UIHandler();
 				}
 			},
 			success: function(data, status){
@@ -287,17 +258,17 @@ var app = {
 					app.loggedUserInit();
 					$(window).unbind("scroll");
 					window.scrollTo(0, 0);
-				}		
+				}
 			}
-		});		
+		});
 	},
-	
+
 	setBannerDestination: function(){
-		$.ajax({				
-			url: app.apiUrl + '/api/v3/user/banner',			
+		$.ajax({
+			url: app.apiUrl + '/api/v4/user/banner',
 			success: function(response, status){
 				app.response = response;
-				//alert(JSON.stringify(app.response));   
+				//alert(JSON.stringify(app.response));
 				$('#bannerLink').attr("onclick",app.response.banner.func);
 				if(app.response.banner.src!==''){
 					$('#why_subscr').find('.ui-btn').hide();
@@ -314,38 +285,36 @@ var app = {
 			}
 		});
 	},
-	
-	
-	
-	sendAuthData: function(){		
-		var userInput = $("#authForm .email").val(); 
+
+
+
+	sendAuthData: function(){
+		var userInput = $("#authForm .email").val();
 		var pass = $("#authForm .password").val();
 		app.exit = false;
 		user = unescape(encodeURIComponent(userInput));
 		pass = unescape(encodeURIComponent(pass));
 		window.localStorage.setItem("user",user);
-		window.localStorage.setItem("pass",pass);	
-		$.ajax({				
-			url: app.apiUrl + '/api/v3/user/login',			
+		window.localStorage.setItem("pass",pass);
+		$.ajax({
+			url: app.apiUrl + '/api/v4/user/login',
 			beforeSend: function(xhr){
 				user = window.localStorage.getItem("user");
-				pass = window.localStorage.getItem("pass");	
-				xhr.setRequestHeader ("Authorization", "Basic " + btoa ( user + ":" + pass) );				
+				pass = window.localStorage.getItem("pass");
+				xhr.setRequestHeader ("Authorization", "Basic " + btoa ( user + ":" + pass) );
 			},
-			success: function(data, status){					
+			success: function(data, status){
 				if(data.userId > 0){
-					app.logged = data.logged;					
+					app.logged = data.logged;
 					app.ajaxSetup();
 					app.showPage('main_page');
 					$('#logout').show();
-					if(app.logged == 'nopay'){				
-						app.currentPageWrapper.find('.mainBut').hide();	
+					if(app.logged == 'nopay'){
+						app.currentPageWrapper.find('.mainBut').hide();
 						app.getSubscription();
-						app.checkloggetStatus();
 					}
 					if(app.logged == 'noimg'){
 						app.getRegStep();
-						//app.checkloggetStatus();
 					}
 					if(app.logged === true){
 						app.currentPageWrapper.find('.mainBut').show();
@@ -355,98 +324,98 @@ var app = {
 					app.loggedUserInit();
 					//document.removeEventListener("backbutton", app.back, false);
 					window.scrollTo(0, 0);
-				}				
+				}
 			}
 		});
 	},
-	
-	sendUserPosition: function(){			
-		if(app.positionSaved === false){	
+
+	sendUserPosition: function(){
+		if(app.positionSaved === false){
 			navigator.geolocation.getCurrentPosition(app.persistUserPosition, app.userPositionError);
 		}
 	},
-	
-	persistUserPosition: function(position){	
+
+	persistUserPosition: function(position){
 		var data = {
 			longitude: position.coords.longitude,
 			latitude: position.coords.latitude
 		};
-			
+
 		//alert(JSON.stringify(data));
 		//return;
-		
+
 		$.ajax({
-			url: app.apiUrl + '/api/v3/user/location',
+			url: app.apiUrl + '/api/v4/user/location',
 			type: 'Post',
 			data:JSON.stringify(data),
 			success: function(response){
 				app.response = response;
-				app.positionSaved = app.response.result;			
+				app.positionSaved = app.response.result;
 			}
 		});
 	},
-	
-	userPositionError: function(error){		
+
+	userPositionError: function(error){
 		alert('code: '    + error.code    + '\n' +
-	          'message: ' + error.message + '\n');		
+	          'message: ' + error.message + '\n');
 	},
-	
+
 	printUsers: function(){
 		$.ajax({
-			url: app.apiUrl + '/api/v3/users/recently_visited/2',
+			url: app.apiUrl + '/api/v4/users/recently_visited/2',
 			success: function(data, status){
 				for ( var i = 0; i < data.users.length; i++) {
 					$("#udp_"+i).find(".user_photo_wrap .user_photo").attr("src",data.users[i].mainImage.url);
 					$("#udp_"+i).find("span").text(data.users[i].nickName);
 					$("#udp_"+i).find(".address").text(data.users[i].city);
-				}				
+				}
 				//$(".user_data_preview").slideToggle("slow");
-				$(".user_data_preview").show();			
+				$(".user_data_preview").show();
 			}
 		});
 	},
-	
-	contact: function(){		
-		//window.location.href = 'http://dating4disabled.com/contact.asp';		
+
+	contact: function(){
+		//window.location.href = 'http://dating4disabled.com/contact.asp';
 	},
-		
+
 	pushNotificationInit: function(){
 
-		try{ 
+		try{
         	pushNotification = window.plugins.pushNotification;
         	if (device.platform == 'android' || device.platform == 'Android') {
-				//alert('registering android'); 
+				//alert('registering android');
             	pushNotification.register(app.regSuccessGCM, app.regErrorGCM, {"senderID":"48205136182","ecb":"app.onNotificationGCM"});		// required!
-            	
+
 			}
         }
-		catch(err){ 
-			txt="There was an error on this page.\n\n"; 
-			txt+="Error description: " + err.message + "\n\n"; 
+		catch(err){
+			txt="There was an error on this page.\n\n";
+			txt+="Error description: " + err.message + "\n\n";
 			alert(txt);
 
-		} 
-		
-	},	
-	
+		}
+
+	},
+
 	// handle GCM notifications for Android
-    onNotificationGCM: function(e) {    	
-    	//alert(1);   
-    	//console.log('EVENT -> RECEIVED:' + e.event);        
+    onNotificationGCM: function(e) {
+    	//alert(1);
+    	//console.log('EVENT -> RECEIVED:' + e.event);
         switch( e.event ){
-            case 'registered':            
+            case 'registered':
             	//alert("registered");
 			if ( e.regid.length > 0 ){
 				// Your GCM push server needs to know the regID before it can push to this device
 				// here is where you might want to send it the regID for later use.
 				//alert("REGISTERED -> REGID:" + e.regid);
-				
+
 				app.gcmDeviceId = e.regid;
 				app.persistGcmDeviceId();
 			}
             break;
-            
-            
+
+
             case 'message':
             	// if this flag is set, this notification happened while we were in the foreground.
             	// you might want to play a sound to get the user's attention, throw up a dialog, etc.
@@ -454,88 +423,88 @@ var app = {
 					// if the notification contains a soundname, play it.
 					//var my_media = new Media("/android_asset/www/"+e.soundname);
 					//my_media.play();
-            		
+
             		if(app.currentPageId == 'messenger_page'){
-            			app.getMessenger();            			
+            			app.getMessenger();
             		}
-            		
-            		
+
+
             		app.checkNewMessages();
-            		
+
 				}
 				else
 				{	// otherwise we were launched because the user touched a notification in the notification tray.
-					
+
 					if (e.coldstart){
 						console.log('COLDSTART NOTIFICATION');
 						app.getMessenger();
-					}	
+					}
 					else{
 						console.log('--BACKGROUND NOTIFICATION--');
 						app.getMessenger();
-					}	
-					
+					}
+
 					//app.getMessenger();
-				}					
+				}
             	//console.log('MESSAGE -> MSG: ' + e.payload.message);
-            	//console.log('MESSAGE -> MSGCNT: ' + e.payload.msgcnt);            	
+            	//console.log('MESSAGE -> MSGCNT: ' + e.payload.msgcnt);
             	//alert(e.payload.message);
-            	
-            	  
-            	
-            	
+
+
+
+
             break;
-            
+
             case 'error':
             	console.log('ERROR -> MSG:' + e.msg);
             break;
-            
+
             default:
             	console.log('EVENT -> Unknown, an event was received and we do not know what it is');
             break;
         }
     },
-    
+
     persistGcmDeviceId: function(){
-    	$.ajax({				
-			url: app.apiUrl + '/api/v3/user/gcmDeviceId',
+    	$.ajax({
+			url: app.apiUrl + '/api/v4/user/gcmDeviceId',
 			type: 'Post',
-			data: JSON.stringify({			
-				gcmDeviceId: app.gcmDeviceId 
+			data: JSON.stringify({
+				gcmDeviceId: app.gcmDeviceId
 			}),
-			success: function(data, status){				
+			success: function(data, status){
 				//alert(data.persisting);
 			}
 		});
-    	
+
     },
-    
+
     tokenHandler: function(result) {
-        //console.log('success:'+ result);        
+        //console.log('success:'+ result);
         // Your iOS push server needs to know the token before it can push to this device
         // here is where you might want to send it the token for later use.
     },
-	
+
     regSuccessGCM: function (result) {
-    	//alert('success:'+ result);     
+    	//alert('success:'+ result);
     },
-    
+
     regErrorGCM: function (error) {
-    	//alert('error:'+ error);        
+    	//alert('error:'+ error);
     },
-	
+
 	back: function(){
 		$(window).unbind("scroll");
 		window.scrollTo(0, 0);
 		pagesTracker.splice(pagesTracker.length-1,1);
-		var prevPage = pagesTracker[pagesTracker.length-1];		
+		var prevPage = pagesTracker[pagesTracker.length-1];
 
 		if(typeof prevPage == "undefined" || prevPage == "main_page" ||  prevPage == "login_page")
 			//app.showPage('main_page');
 			app.chooseMainPage();
 		else
 			app.showPage(prevPage);
-		
+
 		if(app.currentPageId == 'users_list_page'){
 			app.template = $('#userDataTemplate').html();
 			window.scrollTo(0, app.recentScrollPos);
@@ -544,66 +513,66 @@ var app = {
 		app.searchFuncsMainCall = true;
 		app.stopLoading();
 	},
-	
-	showPage: function(page){		
+
+	showPage: function(page){
 		app.currentPageId = page;
 		app.currentPageWrapper = $('#'+app.currentPageId);
 		app.container = app.currentPageWrapper.find('.content_wrap');
-		if(pagesTracker.indexOf(app.currentPageId)!=-1){			
+		if(pagesTracker.indexOf(app.currentPageId)!=-1){
 			pagesTracker.splice(pagesTracker.length-1,pagesTracker.indexOf(app.currentPageId));
-			
+
 		}
 		if(pagesTracker.indexOf(app.currentPageId) == -1){
 			pagesTracker.push(app.currentPageId);
-		}		
+		}
 		$('.appPage').hide();
 		//alert('1');
-		app.currentPageWrapper.show();	
+		app.currentPageWrapper.show();
 
 		console.log(app.currentPageId);
-		
+
 		if(app.currentPageId == 'main_page'){
 			$('#back').hide();
 			$('#sign_up').hide();
-			//$('#contact').show();			
+			//$('#contact').show();
 		}
 		else if(app.currentPageId == 'login_page'){
 			$('#back').hide();
 			$('#sign_up').show();
-			$('#contact').hide(); 
-		}		
+			$('#contact').hide();
+		}
 		else{
 			$('#back').show();
 			$('#sign_up').hide();
 			$('#contact').hide();
 			document.addEventListener("backbutton", app.back, false);
 		}
-		
+
 		$(window).unbind("scroll");
-		
+
 	},
-	
+
 	sortByDistance: function(){
-		app.sort = 'distance';		
+		app.sort = 'distance';
 		$('#sortByDistance').hide();
 		$('#sortByEntranceTime').show();
-		app.chooseSearchFunction();		
-	},
-	
-	sortByEntranceTime: function(){
-		app.sort = '';		
-		$('#sortByEntranceTime').hide();
-		$('#sortByDistance').show();		
 		app.chooseSearchFunction();
 	},
-	
+
+	sortByEntranceTime: function(){
+		app.sort = '';
+		$('#sortByEntranceTime').hide();
+		$('#sortByDistance').show();
+		app.chooseSearchFunction();
+	},
+
 	chooseSearchFunction: function(){
-		
+
 		app.searchFuncsMainCall = false;
-		
-		if(app.action == 'getOnlineNow'){					
-			app.getOnlineNow();			
-		}			
+
+		if(app.action == 'getOnlineNow'){
+			app.getOnlineNow();
+		}
 		else if(app.action == 'getSearchResults'){
 			app.search();
 		}
@@ -611,9 +580,9 @@ var app = {
 			app.getStatUsers(app.statAction);
 		}
 	},
-	
+
 	getOnlineNow: function(){
-		app.showPage('users_list_page');		
+		app.showPage('users_list_page');
 		app.currentPageWrapper.find('.content_wrap').html('');
 		app.template = $('#userDataTemplate').html();
 		app.container = app.currentPageWrapper.find('.content_wrap');
@@ -622,33 +591,33 @@ var app = {
 		app.pageNumber = 1;
 		app.getUsers();
 	},
-	
- 
+
+
 	getUsers: function(){
-		app.startLoading();		
-		
+		app.startLoading();
+
 		if(app.searchFuncsMainCall === true && app.positionSaved === true){
-			$('#sortByEntranceTime').hide();			
+			$('#sortByEntranceTime').hide();
 			$('#sortByDistance').show();
 			app.sort = '';
 		}
-		
-		if(app.action == 'getOnlineNow'){					
-			app.requestUrl = app.apiUrl + '/api/v3/users/online/count:'+app.itemsPerPage+'/page:'+app.pageNumber+'/sort:'+app.sort;
-		}	
+
+		if(app.action == 'getOnlineNow'){
+			app.requestUrl = app.apiUrl + '/api/v4/users/online/count:'+app.itemsPerPage+'/page:'+app.pageNumber+'/sort:'+app.sort;
+		}
 		else if(app.action == 'getSearchResults'){
 			//var countryCode = $('#countries_list').val();
 			var region = $('.regionsList select').val();
 			var ageFrom = $(".age_1 select").val();
-			var ageTo = $(".age_2 select").val();			
+			var ageTo = $(".age_2 select").val();
 			var nickName = $('.nickName').val();
-			app.requestUrl = app.apiUrl + '/api/v3/users/search/region:'+region+'/age:'+ageFrom+'-'+ageTo+'/nickName:'+nickName+'/count:'+app.itemsPerPage+'/page:'+app.pageNumber+'/sort:'+app.sort;
-		}	
-		else if(app.action == 'getStatResults'){					
-			app.requestUrl = app.apiUrl + '/api/v3/user/statistics/'+app.statAction+'/count:'+app.itemsPerPage+'/page:'+app.pageNumber+'/sort:'+app.sort;
+			app.requestUrl = app.apiUrl + '/api/v4/users/search/region:'+region+'/age:'+ageFrom+'-'+ageTo+'/nickName:'+nickName+'/count:'+app.itemsPerPage+'/page:'+app.pageNumber+'/sort:'+app.sort;
 		}
-		
-		$.ajax({						
+		else if(app.action == 'getStatResults'){
+			app.requestUrl = app.apiUrl + '/api/v4/user/statistics/'+app.statAction+'/count:'+app.itemsPerPage+'/page:'+app.pageNumber+'/sort:'+app.sort;
+		}
+
+		$.ajax({
 			url: app.requestUrl,
 			timeout:10000,
 			success: function(response, status){
@@ -660,9 +629,9 @@ var app = {
 				//alert(JSON.stringify(err));
 			}
 		});
-	},	
-	
-	
+	},
+
+
 	displayUsers: function(){
 		//app.container.parent('div').append('<h1>תוצאות</h1>');
 
@@ -727,94 +696,94 @@ var app = {
         else{
         	app.pageNumber--;
         }
-	},	
-	
-		
+	},
+
+
 	setScrollEventHandler: function(){
-		$(window).scroll(function(){	
+		$(window).scroll(function(){
 			var min=600;
-			
+
 			if($(this).width()>767)min=1250;
 			app.recentScrollPos = $(this).scrollTop();
-			if(app.recentScrollPos >= app.container.height()-min){	
+			if(app.recentScrollPos >= app.container.height()-min){
 				//alert(app.recentScrollPos);
-				$(this).unbind("scroll");				
-				if(app.responseItemsNumber == app.itemsPerPage){					
-					app.pageNumber++;					
+				$(this).unbind("scroll");
+				if(app.responseItemsNumber == app.itemsPerPage){
+					app.pageNumber++;
 					app.getUsers();
 				}
 			}
 		});
 	},
-	
-	getMyProfileData: function(){		
+
+	getMyProfileData: function(){
 		app.startLoading();
-		$("#upload_image").click(function(){		
+		$("#upload_image").click(function(){
 			$("#statistics").hide();
 			$("#uploadDiv").css({"background":"#fff"});
 			$("#uploadDiv").show();
-			
+
 			$('#get_stat_div').show();
 			$('#upload_image_div').hide();
 		});
-		$("#get_stat").click(function(){		
-			$("#statistics").show();			
+		$("#get_stat").click(function(){
+			$("#statistics").show();
 			$("#uploadDiv").hide();
-			
+
 			$('#get_stat_div').hide();
-			$('#upload_image_div').show();			
-		});	
-		var userId = window.localStorage.getItem("userId");		
+			$('#upload_image_div').show();
+		});
+		var userId = window.localStorage.getItem("userId");
 		$.ajax({
-			url: app.apiUrl + '/api/v3/user/profile/'+userId,						
+			url: app.apiUrl + '/api/v4/user/profile/'+userId,
 			success: function(user, status, xhr){
 				app.showPage('my_profile_page');
-				app.container = app.currentPageWrapper.find('.myProfileWrap');		
-				app.container.find('.txt strong').html(user.nickName+', <span>'+user.age+'</span>');			
-				app.container.find('.txt strong').siblings('span').text(user.city); 
+				app.container = app.currentPageWrapper.find('.myProfileWrap');
+				app.container.find('.txt strong').html(user.nickName+', <span>'+user.age+'</span>');
+				app.container.find('.txt strong').siblings('span').text(user.city);
 				app.container.find('.txt div').html(user.about);
 				app.container.find('.user_pic img').attr("src",user.mainImage.url);
 				if(user.isPaying && user.userGender == 1){
 					app.container.find(".special4").show();
-				}				
+				}
 				//console.log(JSON.stringify(user));
 				//return;
-				var addedToFriends = user.statistics.fav;  
+				var addedToFriends = user.statistics.fav;
 				var contactedMe = user.statistics.contactedme;
 				var contacted = user.statistics.contacted;
 				var addedToBlackList = user.statistics.black;
 				var addedYouToFriends = user.statistics.favedme;
 				var lookedMe = user.statistics.lookedme;
 				var looked = user.statistics.looked;
-				app.container.find(".stat_side").eq(1).find(".items_wrap").eq(0).find(".stat_value").text(addedToFriends);    
+				app.container.find(".stat_side").eq(1).find(".items_wrap").eq(0).find(".stat_value").text(addedToFriends);
 				app.container.find(".stat_side").eq(0).find(".items_wrap").eq(1).find(".stat_value").text(contactedMe);
 				app.container.find(".stat_side").eq(1).find(".items_wrap").eq(2).find(".stat_value").text(contacted);
 				app.container.find(".stat_side").eq(1).find(".items_wrap").eq(1).find(".stat_value").text(addedToBlackList);
-				app.container.find(".stat_side").eq(0).find(".items_wrap").eq(0).find(".stat_value").text(addedYouToFriends);				
+				app.container.find(".stat_side").eq(0).find(".items_wrap").eq(0).find(".stat_value").text(addedYouToFriends);
 				app.container.find(".stat_side").eq(0).find(".items_wrap").eq(2).find(".stat_value").text(looked);
 				app.container.find(".stat_side").eq(1).find(".items_wrap").eq(3).find(".stat_value").text(lookedMe);
-				app.stopLoading();				
+				app.stopLoading();
 			}
 		});
-	},	
-	
-	getStatUsers: function(statAction){		
-		app.showPage('users_list_page');		
+	},
+
+	getStatUsers: function(statAction){
+		app.showPage('users_list_page');
 		app.currentPageWrapper.find('.content_wrap').html('');
 		app.template = $('#userDataTemplate').html();
 		app.container = app.currentPageWrapper.find('.content_wrap');
 		app.container.append('<h1>תוצאות</h1><div class="dots"></div>');
 		app.pageNumber = 1;
 		app.action = 'getStatResults';
-		app.statAction = statAction;		
+		app.statAction = statAction;
 		app.getUsers();
 	},
-	
+
 	recovery: function(){
 		app.showPage('recovery_page');
 		app.currentPageWrapper.find('#user').val('');
 	},
-	
+
 	sendRecovery: function(){
 		var mail = app.currentPageWrapper.find('#user').val();
 		var email_pattern = new RegExp(/^[+a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,4}$/i);
@@ -823,7 +792,7 @@ var app = {
             return false;
         }
         $.ajax({
-        	url: app.apiUrl + '/api/v3/recovery/'+mail,
+        	url: app.apiUrl + '/api/v4/recovery/'+mail,
         	success: function(response){
         		//alert(JSON.stringify(response));
         		if(!response.err)
@@ -836,24 +805,24 @@ var app = {
 			}
         });
 	},
-	
-	getSearchForm: function(){				
+
+	getSearchForm: function(){
 		app.startLoading();
 		app.showPage('search_form_page');
 		app.getRegions();
 		app.searchFuncsMainCall = true;
 		//app.getSexPreference();
 		//$("#regions_wrap").hide();
-		//app.getCountries();		
+		//app.getCountries();
 		var html = '<select>';
-		for(var i = 18; i <= 80; i++){			
+		for(var i = 18; i <= 80; i++){
 			html = html + '<option value="' + i + '"">' + i + '</option>';
-		}		
-		html = html + '</select>';		
-		
-		$(".age_1").html(html);				
+		}
+		html = html + '</select>';
+
+		$(".age_1").html(html);
 		$(".age_1").trigger("create");
-		
+
 		var html = '<select>';
 		var sel = '';
 		for(var i = 19; i <= 80; i++){
@@ -861,40 +830,40 @@ var app = {
 			else sel = '';
 			html = html + '<option value="' + i + '"' + sel + '>' + i + '</option>';
 		}
-		html = html + '</select>';				
+		html = html + '</select>';
 		$(".age_2").html(html);
 		$(".age_2").trigger("create");
 		app.stopLoading();
 	},
-		
+
 /*	getSexPreference: function(){
-		$.ajax({			
-			url: app.apiUrl + '/api/v3/list/sexPreference',						
-			success: function(list, status, xhr){							
-				var html = '';	
+		$.ajax({
+			url: app.apiUrl + '/api/v4/list/sexPreference',
+			success: function(list, status, xhr){
+				var html = '';
 				if(app.currentPageId == 'register_page'){
-					for(var i in list.items){					  
-						var item = list.items[i];					
+					for(var i in list.items){
+						var item = list.items[i];
 						html = html + '<option value="' + item.sexPrefId + '">' + item.sexPrefName + '</option>';
-					}					
-					$(".sexPreferenceList").html(html);				
+					}
+					$(".sexPreferenceList").html(html);
 					$(".sexPreferenceList").val($(".sexPreferenceList").val());
 					$(".sexPreferenceList").find("option[value='1']").insertBefore($(".sexPreferenceList").find("option:eq(0)"));
 					$(".sexPreferenceList").val($(".sexPreferenceList").find("option:first").val()).selectmenu("refresh");
 				}else if(app.currentPageId == 'search_form_page'){
-					for(var i in list.items){					  
-						var item = list.items[i];					
-						html = html + '<input type="checkbox" id="check-sex' + item.itemId  + '" value="' + item.itemId  + '"><label for="check-sex' + item.itemId  + '">' + item.itemName + '</label>';		
+					for(var i in list.items){
+						var item = list.items[i];
+						html = html + '<input type="checkbox" id="check-sex' + item.itemId  + '" value="' + item.itemId  + '"><label for="check-sex' + item.itemId  + '">' + item.itemName + '</label>';
 					}
 					$(".sexPreferenceList fieldset").html(html);
-					$(".sexPreferenceList").trigger("create");					
+					$(".sexPreferenceList").trigger("create");
 				}
-				
+
 			}
-		
+
 		});
 	},*/
-	
+
 	injectCountries: function(html, container){
 		container.html(html);
 		container.trigger('create');
@@ -906,10 +875,10 @@ var app = {
 	},
 
 
-	
+
 	getRegions: function(){
     		$.ajax({
-    			url: app.apiUrl + '/api/v3/list/regions',
+    			url: app.apiUrl + '/api/v4/list/regions',
     			success: function(list, status, xhr){
     				var html = '<select name="regionCode">';
     				if(app.currentPageId == 'search_form_page'){
@@ -952,21 +921,21 @@ var app = {
 	/*
 	getCities: function(countryCode,regionCode){
 		$.ajax({
-			url: 'http://m.shedate.co.il/api/v3/list/cities/'+countryCode+'/'+regionCode,						
+			url: 'http://m.shedate.co.il/api/v4/list/cities/'+countryCode+'/'+regionCode,
 			success: function(list, status, xhr){
-				app.container.find("#cities_wrap").hide();				
+				app.container.find("#cities_wrap").hide();
 				if(list.itemsNumber > 0){
 					var html = '<select name="cityName">';
-					for(var i in list.items){					
-						var item = list.items[i];					
+					for(var i in list.items){
+						var item = list.items[i];
 						html = html + '<option value="' + item.cityName + '">' + item.cityName + '</option>';
 					}
 					html = html + '</select>';
-					app.container.find(".citiesList").html(html).trigger('create');				
-					app.container.find("#cities_wrap").show();				
+					app.container.find(".citiesList").html(html).trigger('create');
+					app.container.find("#cities_wrap").show();
 				}
 				else{
-					if(countryCode != 'US'){   
+					if(countryCode != 'US'){
 						var html = '<input type="text" name="cityName" id="cityName" />';
 						app.container.find(".citiesList").html(html);
 						app.container.find("#cities_wrap").show();
@@ -976,26 +945,26 @@ var app = {
 		});
 	},
 	*/
-	
+
 	sendRegData: function(){
 		if(app.formIsValid()){
 			var data = JSON.stringify(
 				$('#regForm').serializeObject()
 			);
 			$.ajax({
-				url: app.apiUrl + '/api/v3/user',
+				url: app.apiUrl + '/api/v4/user',
 				type: 'Post',
 				data: data,
 				success: function(response){
 					app.response = response;
 					//alert( JSON.stringify(app.response));
 					if(app.response.result > 0){
-						var user = app.container.find("#userEmail").val(); 
-						var pass = app.container.find("#userPass").val();						
+						var user = app.container.find("#userEmail").val();
+						var pass = app.container.find("#userPass").val();
 						window.localStorage.setItem("user",user);
 						window.localStorage.setItem("pass",pass);
 						window.localStorage.setItem("userId", app.response.result);
-						app.ajaxSetup(); 						
+						app.ajaxSetup();
 						app.getRegStep(data);
 					}
 					else{
@@ -1005,12 +974,12 @@ var app = {
 					app.stopLoading();
 				}
 			});
-			
-			
+
+
 		}
-		
+
 	},
-		
+
 	getRegStep: function(data){
     	//$('#test_test_page').show();
     	app.showPage('upload_image_page');
@@ -1027,7 +996,7 @@ var app = {
     	window.scrollTo(0,0);
 
     },
-	
+
 	formIsValid: function(){
     		var email_pattern = new RegExp(/^[+a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,4}$/i);
     		if (!(email_pattern.test($('#userEmail').val()))) {
@@ -1151,7 +1120,7 @@ var app = {
 
     		return true;
     },
-	
+
 	search: function(pageNumber){
 		app.showPage('users_list_page');
 		app.template = $('#userDataTemplate').html();
@@ -1168,7 +1137,7 @@ var app = {
     	var abuseMessage = $('#abuseMessage').val();
 
     	$.ajax({
-    	   url: app.apiUrl+'/api/v3/user/abuse/'+app.reportAbuseUserId,
+    	   url: app.apiUrl+'/api/v4/user/abuse/'+app.reportAbuseUserId,
     	   type: 'Post',
     	   contentType: "application/json; charset=utf-8",
     	   data: JSON.stringify({abuseMessage: abuseMessage}),
@@ -1196,7 +1165,7 @@ var app = {
 		}
 
 		$.ajax({
-		   	url: app.apiUrl + '/api/v3/contactUs',
+		   	url: app.apiUrl + '/api/v4/contactUs',
 		   	type: 'Post',
 		   	contentType: "application/json; charset=utf-8",
 		   	data: JSON.stringify({
@@ -1217,8 +1186,8 @@ var app = {
 	},
 
 
-	
-	getUserProfile: function(userId){		
+
+	getUserProfile: function(userId){
 		if(userId==window.localStorage.getItem("userId")){app.getMyProfileData(); return;}
 
 		if(getUsersRequest != ''){
@@ -1228,10 +1197,10 @@ var app = {
         }
 
 		app.ajaxSetup();
-		app.startLoading();	
+		app.startLoading();
 
 		$.ajax({
-			url: app.apiUrl + '/api/v3/user/profile/'+userId,
+			url: app.apiUrl + '/api/v4/user/profile/'+userId,
 			type: 'Get',
 			success: function(user, status, xhr){
 				//alert( JSON.stringify(user));
@@ -1256,9 +1225,9 @@ var app = {
 				|| user.mainImage.url == "http://m.shedate.co.il/images/no_photo_male.jpg"){
 					app.container.find('#pic1').parent('a').removeClass("fancybox").attr("href","#");
 				}
-				app.container.find('.pic_wrap').eq(0).show();				
+				app.container.find('.pic_wrap').eq(0).show();
 				app.container.find('.fancybox').fancybox();
-				if(typeof user.otherImages[0] !== "undefined"){ 
+				if(typeof user.otherImages[0] !== "undefined"){
 					//alert(user.otherImages[0]);
 					app.container
 						.find('.pic_wrap').eq(1).show()
@@ -1310,11 +1279,11 @@ var app = {
 				}
 				if(user.isNew == 1){
 					app.container.find(".blue_star").show();
-				}				
+				}
 				if(user.isOnline == 1){
 					app.container.find(".on5").show();
 				}
-				if(user.distance != ""){						
+				if(user.distance != ""){
 					app.container.find(".distance_value").show().css({'right':($('#user_pictures .pic_wrap').width()*0.9-$('#user_pictures .distance_value').width())/2+'px'}).find("span").html(user.distance);
 				}else{
 					app.container.find(".distance_value").hide().find("span").html(user.distance);
@@ -1444,17 +1413,17 @@ var app = {
     		.parent('a')
     		.attr({"href": user.otherImages[index-1].url, "data-size": imageSize});
     },
-	
-	
+
+
 	getProfileGroup: function(groupName){
 		var group = app.profileGroupTemplate;
 		return group.replace("[GROUP_NAME]", groupName);
 	},
-	
+
 	getProfileLine: function(lineName, lineValue){
 		if(lineName != ""){
 			var line = app.profileLineTemplate;
-			line = line.replace("[LINE_NAME]", lineName);			
+			line = line.replace("[LINE_NAME]", lineName);
 		}
 		else{
 			var line = app.profileLineTemplate2;
@@ -1462,48 +1431,98 @@ var app = {
 		line = line.replace("[LINE_VALUE]", lineValue);
 		return line;
 	},
-	
-	getMessenger: function(){		
-		app.startLoading();		
+
+	getMessenger: function(){
+
+		if(app.pageNumber == 1){
+        	app.startLoading();
+        }
+
+        app.itemsPerPage = 20;
+
 		$.ajax({
-			url: app.apiUrl + '/api/v3/user/contacts',									
+			url: app.apiUrl + '/api/v4/user/contacts/perPage:' + app.itemsPerPage + '/page:' + app.pageNumber,
+			complete: function(event, xhr, settings){
+				//console.log("ERR: " + JSON.stringify(event + xhr + settings));
+			},
+			error: function(response){
+				console.log("ERR: " + JSON.stringify(response));
+			},
 			success: function(response){
-				
-				app.response = response;				
+   				console.log(JSON.stringify(response));
+
+				app.response = response;
 				//if(pagesTracker.indexOf('messenger_page')!=-1){
 				//	pagesTracker.splice(pagesTracker.length-pagesTracker.indexOf('messenger_page'),pagesTracker.indexOf('messenger_page'));
 				//}
 				app.showPage('messenger_page');
-				app.container = app.currentPageWrapper.find('.chats_wrap');
-				app.container.html('');				
-				app.template = $('#messengerTemplate').html();
-				for(var i in app.response.allChats){
-					var currentTemplate = app.template; 
-					var chat = app.response.allChats[i];
-					currentTemplate = currentTemplate.replace("[IMAGE]",chat.user.mainImage.url);
-					currentTemplate = currentTemplate.replace(/\[USERNICK\]/g,chat.user.nickName);
-					currentTemplate = currentTemplate.replace("[RECENT_MESSAGE]",chat.recentMessage.text);
-					currentTemplate = currentTemplate.replace("[DATE]", chat.recentMessage.date);					
-					currentTemplate = currentTemplate.replace("[USER_ID]", chat.user.userId);
-					app.container.append(currentTemplate);
-					if(chat.newMessagesCount > 0||chat. user.isPaying == 1){
-						var currentUserNode = app.container.find(":last-child");
-						if(chat.newMessagesCount > 0)currentUserNode.find(".new_mes_count").html(chat.newMessagesCount).show();
-						if(chat.user.isPaying == 1)currentUserNode.find(".special2").show();
+
+
+			   app.container = app.currentPageWrapper.find('.chats_wrap');
+			   if(app.pageNumber == 1){
+			        app.container.html('');
+			   }
+
+			   if(app.currentPageId == 'messenger_page'){
+
+			       	$('.loadingHTML').remove();
+
+			       	app.responseItemsNumber = app.response.chatsNumber;
+
+     			   	if(app.responseItemsNumber == 0){
+			           app.container.append('<div class="center noResults">אין הודעות</div>')
+			           return;
+			       	}
+
+
+					app.template = $('#messengerTemplate').html();
+					for(var i in app.response.allChats){
+						var currentTemplate = app.template;
+						var chat = app.response.allChats[i];
+						currentTemplate = currentTemplate.replace("[IMAGE]",chat.user.mainImage.url);
+						currentTemplate = currentTemplate.replace(/\[USERNICK\]/g,chat.user.nickName);
+						currentTemplate = currentTemplate.replace("[RECENT_MESSAGE]",chat.recentMessage.text);
+						currentTemplate = currentTemplate.replace("[DATE]", chat.recentMessage.date);
+						currentTemplate = currentTemplate.replace("[USER_ID]", chat.user.userId);
+						app.container.append(currentTemplate);
+						if(chat.newMessagesCount > 0 || chat. user.isPaying == 1){
+							var currentUserNode = app.container.find(":last-child");
+							if(chat.newMessagesCount > 0)
+								currentUserNode.find(".new_mes_count").html(chat.newMessagesCount).show();
+
+							if(chat.user.isPaying == 1)
+								currentUserNode.find(".special2").show();
+						}
 					}
-				}
+
+
+
+					if(app.responseItemsNumber == app.itemsPerPage){
+						var loadingHTML = '<div class="loadingHTML mar_top_8">'+$('#loadingBarTemplate').html()+'</div>';
+						$(loadingHTML).insertAfter(app.container.find('.mail_section:last-child'));
+					}
+				   //else{alert(app.responseItemsNumber +' '+app.itemsPerPage)}
+
+					app.setScrollEventHandler(1000, 2000);
+
+
+			   }
+			   else{
+			       app.pageNumber--;
+			   }
+
 				app.stopLoading();
 			}
 		});
 	},
-	
+
 	getChat: function(chatWith, userNick){
 		if(chatWith===window.localStorage.getItem("userId")){app.getMyProfileData(); return;}
 		app.chatWith = chatWith;
 		app.startLoading();
 		$.ajax({
-			url: app.apiUrl + '/api/v3/user/chat/'+app.chatWith,									
-			success: function(response){				
+			url: app.apiUrl + '/api/v4/user/chat/'+app.chatWith,
+			success: function(response){
 				app.response = response;
 				app.contactCurrentReadMessagesNumber = app.response.contactCurrentReadMessagesNumber;
 				//alert(JSON.stringify(app.response));
@@ -1511,7 +1530,7 @@ var app = {
 				window.scrollTo(0, 0);
 				app.container = app.currentPageWrapper.find('.chat_wrap');
 				app.container.html('');
-				app.template = $('#chatMessageTemplate').html();				
+				app.template = $('#chatMessageTemplate').html();
 				app.currentPageWrapper.find('.content_wrap').find("h1 span").text(userNick).attr('onclick','app.getUserProfile(\''+chatWith+'\')');
 				var html = app.buildChat();
 				app.container.html(html);
@@ -1521,23 +1540,23 @@ var app = {
 			}
 		});
 	},
-	
+
 	subscribtionButtonHandler: function(){
-		if(app.response.chat.abilityReadingMessages == 0){					
-			app.container.find('.message_in .buySubscr').show().trigger('create');									
+		if(app.response.chat.abilityReadingMessages == 0){
+			app.container.find('.message_in .buySubscr').show().trigger('create');
 		}
 	},
-	
+
 	buildChat: function(){
 		var html = '';
 		var k = 1;
 		var appendToMessage = '';
-				
-		for(var i in app.response.chat.items){					
+
+		for(var i in app.response.chat.items){
 			var currentTemplate = app.template;
 			//console.log(currentTemplate);
 			var message = app.response.chat.items[i];
-			
+
 			if(app.chatWith == message.from){
             	message.text = message.text + appendToMessage;
             	var messageType = "message_in";
@@ -1556,7 +1575,7 @@ var app = {
             	//console.log(message.isRead);
             	//var isRead = (message.isRead == 0) ? "checked" : "double_checked";
             }
-			
+
 			currentTemplate = currentTemplate.replace("[MESSAGE]", message.text);
             currentTemplate = currentTemplate.replace("[DATE]", message.date);
             currentTemplate = currentTemplate.replace("[TIME]", message.time);
@@ -1565,30 +1584,30 @@ var app = {
             currentTemplate = currentTemplate.replace("[MESSAGE_STATUS_VISIBILITY]", messageStatusVisibility);
             currentTemplate = currentTemplate.replace("[MESSAGE_STATUS_IMAGE]", messageStatusImage);
             currentTemplate = currentTemplate.replace("[INFO]", info);
-			
+
 			html = html + currentTemplate;
 
 			console.log(html);
-			
+
 			//var from = message.from;
-			
+
 			//k++;
 		}
-		
+
 		return html;
-	},	
-	
-	sendMessage: function(){		
-		var message = $('#message').val();		
+	},
+
+	sendMessage: function(){
+		var message = $('#message').val();
 		//alert(message);
 		if(message.length > 0){
-			$('#message').val('');			
+			$('#message').val('');
 			$.ajax({
-				url: app.apiUrl + '/api/v3/user/chat/'+app.chatWith,
+				url: app.apiUrl + '/api/v4/user/chat/'+app.chatWith,
 				type: 'Post',
 				contentType: "application/json; charset=utf-8",
-				data: JSON.stringify({			
-					message: message 
+				data: JSON.stringify({
+					message: message
 				}),
 				success: function(response){
 					//alert(JSON.stringify(response));
@@ -1598,21 +1617,21 @@ var app = {
 					app.subscribtionButtonHandler();
 					app.refreshChat();
 				},
-				error: function(response){				
+				error: function(response){
 					alert(JSON.stringify(response));
 				}
 			});
-		
+
 		}
 	},
-	
-	
+
+
 	refreshChat: function(){
 		if(app.currentPageId == 'chat_page'){
 			$.ajax({
-				url: app.apiUrl + '/api/v3/user/chat/'+app.chatWith+'/'+app.contactCurrentReadMessagesNumber+'/refresh',
+				url: app.apiUrl + '/api/v4/user/chat/'+app.chatWith+'/'+app.contactCurrentReadMessagesNumber+'/refresh',
 				type: 'Get',
-				complete: function(response, status, jqXHR){					
+				complete: function(response, status, jqXHR){
 					//app.stopLoading();
 				},
 				success: function(response){
@@ -1627,16 +1646,16 @@ var app = {
 					}
 
 					refresh = setTimeout(app.refreshChat, 100);
-					
+
 				}
 			});
 		}
 		else{
 			clearTimeout(refresh);
 		}
-		
+
 	},
-	
+
 	checkNewMessages: function(){
 
     	var user = window.localStorage.getItem("user");
@@ -1645,7 +1664,7 @@ var app = {
     	if(user != '' && pass != '' && app.currentPageId != 'login_page' && app.currentPageId != 'register_page' && app.currentPageId != 'recovery_page'){
 
     		checkNewMessagesRequest = $.ajax({
-    			url: app.apiUrl + '/api/v3/user/newMessagesCount',
+    			url: app.apiUrl + '/api/v4/user/newMessagesCount',
     			type: 'Get',
     			complete: function(response, status, jqXHR){
     				//app.stopLoading();
@@ -1675,11 +1694,15 @@ var app = {
     	}
 
     },
-	
+
 	getSubscription: function(){
 		var userId = window.localStorage.getItem("userId");
-		var ref = window.open(app.apiUrl + '/subscription/?userId='+userId+'&app=1', '_blank', 'location=yes');
-	
+		ref = window.open(app.apiUrl + '/subscription/?userId='+userId+'&app=1', '_blank', 'location=yes');
+		ref.addEventListener('exit', app.chooseMainPage);
+
+
+
+
 		//app.showPage('subscription_page');
 		//$(".subscr_quest").unbind('click');
 		//$(".subscr_quest").click(function(){
@@ -1690,9 +1713,9 @@ var app = {
 		//	else
 		//		span.text('+');
 		//});
-		
+
 		//$('input[type="radio"]').removeAttr("checked");
-		
+
 		//$(".subscr").click(function(){
 		//	$(".subscr_left").removeClass("subscr_sel");
 		//	$(this).find("input").attr("checked","checked");
@@ -1700,170 +1723,188 @@ var app = {
 		//	setTimeout(function(){
 		//		var product_id = $(".subscr_ch:checked").val();
 		//		var nickName = '';
-		//		window.location.href = 'https://www.2checkout.com/2co/buyer/purchase?sid=1400004&quantity=1&product_id='+product_id+'&userid='+app.userId+'&usernick='+nickName;			
+		//		window.location.href = 'https://www.2checkout.com/2co/buyer/purchase?sid=1400004&quantity=1&product_id='+product_id+'&userid='+app.userId+'&usernick='+nickName;
 		//	},100);
 		//});
 	},
-	
+
 	confirmDeleteImage: function(imageId){
-		app.imageId = imageId;		
+		app.imageId = imageId;
 		navigator.notification.confirm(
 				'Delete this image?',  // message
-		        app.deleteImageChoice,              // callback to invoke with index of button pressed		       
+		        app.deleteImageChoice,              // callback to invoke with index of button pressed
 		        'Confirmation',            // title
 		        'Confirm,Cancel'          // buttonLabels
 		 );
 	},
-	
+
 	deleteImageChoice: function(buttonPressedIndex){
 		if(buttonPressedIndex == 1){
 			app.deleteImage();
 		}
 	},
-	
+
 	deleteImage: function(){
-		app.requestUrl = app.apiUrl + '/api/v3/user/images/delete/' + app.imageId,
+		app.requestUrl = app.apiUrl + '/api/v4/user/images/delete/' + app.imageId,
 		app.requestMethod = 'Post';
 		app.getUserImages();
 	},
-	
+
 	displayUserImages: function(){
-		app.requestUrl = app.apiUrl + '/api/v3/user/images';
+		app.requestUrl = app.apiUrl + '/api/v4/user/images';
 		app.requestMethod = 'Get';
 		app.getUserImages();
 	},
-	
+
 	getUserImages: function(){
 		$('.imagesButtonsWrap').hide();
 		$.ajax({
 			url: app.requestUrl,
-			type: app.requestMethod,			
+			type: app.requestMethod,
 			success: function(response){
-								
+
 				app.response = response;
 				app.showPage('delete_images_page');
 				app.container = app.currentPageWrapper.find('.imagesListWrap');
 				app.container.html('');
 				app.template = $('#editImageTemplate').html();
 				window.scrollTo(0,0);
-				
-				//alert(JSON.stringify(app.response));				
+
+				//alert(JSON.stringify(app.response));
 				if(app.response.images.itemsNumber < 4)
 					$('.imagesButtonsWrap').show();
-				
-				for(var i in app.response.images.items){					
-					var currentTemplate = app.template; 
-					var image = app.response.images.items[i];					
+
+				for(var i in app.response.images.items){
+					var currentTemplate = app.template;
+					var image = app.response.images.items[i];
 					currentTemplate = currentTemplate.replace("[IMAGE]", image.url);
 					currentTemplate = currentTemplate.replace("[IMAGE_ID]", image.id);
-					app.container.append(currentTemplate);					
+					app.container.append(currentTemplate);
 					var currentImageNode = app.container.find('.userImageWrap:last-child');
-															
+
 					if(image.isValid == 1)
 						currentImageNode.find('.imageStatus').html("אושר").css({"color":"green"});
-					else						
-						currentImageNode.find('.imageStatus').html("עדיין לא אושר").css({"color":"red"});					
-					
+					else
+						currentImageNode.find('.imageStatus').html("עדיין לא אושר").css({"color":"red"});
+
 				}
-				
+
 				app.container.trigger('create');
 			}
 		});
 	},
-	
+
 	capturePhoto: function(sourceType, destinationType){
-		// Take picture using device camera and retrieve image as base64-encoded string	
+		// Take picture using device camera and retrieve image as base64-encoded string
 		var options = {
-			quality: 100, 
+			quality: 100,
 			destinationType: app.destinationType.FILE_URI,
 			sourceType: sourceType,
 			encodingType: app.encodingType.JPEG,
 			targetWidth: 600,
-			targetHeight: 600,		
+			targetHeight: 600,
 			saveToPhotoAlbum: false,
 			chunkedMode:true,
 			correctOrientation: true
 		};
-		
+
 		navigator.camera.getPicture(app.onPhotoDataSuccess, app.onPhotoDataFail, options);
-		
+
 	},
-	
-	onPhotoDataSuccess: function(imageURI) {		
-		app.startLoading();
-		
-		/*
-		$("#myNewPhoto").attr("src","data:image/jpeg;base64," + imageURI);
-		$('#myNewPhoto').Jcrop({
-			onChange: showPreview,
-			onSelect: showPreview,
-			aspectRatio: 1
-		});
-		*/
-		app.uploadPhoto(imageURI); 
-	},
-	
-	onPhotoDataFail: function() {
-		
-	},
-	
+
+		capture: function(sourceType, destinationType){
+    		// Take picture using device camera and retrieve image as base64-encoded string
+    		var options = {
+    			quality: 100,
+    			destinationType: destinationType,
+    			sourceType: sourceType,
+    			encodingType: app.encodingType.JPEG,
+    			targetWidth: 600,
+    			targetHeight: 600,
+    			saveToPhotoAlbum: false,
+    			chunkedMode:true,
+    			correctOrientation: true
+    		};
+
+    		navigator.camera.getPicture(app.onPhotoDataSuccess, app.onPhotoDataFail, options);
+
+    	},
+
+    	onPhotoDataSuccess: function(imageURI) {
+
+    		app.startLoading();
+    		/*
+    		$("#myNewPhoto").attr("src","data:image/jpeg;base64," + imageURI);
+    		$('#myNewPhoto').Jcrop({
+    			onChange: showPreview,
+    			onSelect: showPreview,
+    			aspectRatio: 1
+    		});
+    		*/
+    		app.uploadPhoto(imageURI);
+    	},
+
+    	onPhotoDataFail: function() {
+
+    	},
+
 	uploadPhoto: function(imageURI){
 		var user = window.localStorage.getItem("user");
-		var pass = window.localStorage.getItem("pass");		
+		var pass = window.localStorage.getItem("pass");
 		var options = new FileUploadOptions();
         options.fileKey="file";
         options.fileName=imageURI.substr(imageURI.lastIndexOf('/')+1);
         options.mimeType="image/jpeg";
-        options.headers = {"Authorization": "Basic " + btoa ( user + ":" + pass)}; 
-        
+        options.headers = {"Authorization": "Basic " + btoa ( user + ":" + pass)};
+
         var ft = new FileTransfer();
         ft.upload(
-        	imageURI, 
-        	encodeURI("http://m.richdate.co.il/api/v3/user/image"), 
-        	app.uploadSuccess, 
+        	imageURI,
+        	encodeURI("http://m.richdate.co.il/api/v4/user/image"),
+        	app.uploadSuccess,
         	app.uploadFailure,
 	        options
 	    );
 	},
-	
-	
+
+
 	uploadSuccess: function(r){
 		//console.log("Code = " + r.responseCode);
         //console.log("Response = " + r.response);
         //console.log("Sent = " + r.bytesSent);
-        
+
 		//alert(r.response);
         //return;
-		
+
 		app.stopLoading();
-		
+
 		app.response = JSON.parse(r.response);
 		if(app.response.status.code == 0){
 			navigator.notification.confirm(
 				app.response.status.message + '. לחץי על כפתור "נהל תמונות" על מנת למחוק תמונות',  // message
-		        app.manageImagesChoice,              // callback to invoke with index of button pressed		       
+		        app.manageImagesChoice,              // callback to invoke with index of button pressed
 		        'Notification',            // title
 		        'נהל תמונות,ביטול'          // buttonLabels
 		    );
 		}else if(app.response.status.code == 1){
 			app.alert(app.response.status.message);
 		}
-		
+
 		if(app.currentPageId == 'delete_images_page'){
 			app.displayUserImages();
 		}
-		
+
 	},
-	
+
 	manageImagesChoice: function(buttonPressedIndex){
 		if(buttonPressedIndex == 1){
 			app.displayUserImages();
 		}
 	},
-	
-	
+
+
 	uploadFailure: function(error){
-		app.stopLoading(); 
+		app.stopLoading();
 		alert("התרחשה שגיאה. נסה שנית בבקשה.");
 	},
 
@@ -1871,7 +1912,7 @@ var app = {
 
 	getEditProfile: function(){
     	$.ajax({
-    		   url: app.apiUrl + '/api/v3/user/data',
+    		   url: app.apiUrl + '/api/v4/user/data',
     		   success: function(response){
     		   console.log(JSON.stringify(response));
     		   user = response.user;
@@ -1990,7 +2031,7 @@ var app = {
 
 
     	$.ajax({
-    		   url: app.apiUrl + '/api/v3/user/data',
+    		   url: app.apiUrl + '/api/v4/user/data',
     		   //dataType: 'json',
     		   type: 'post',
     		   data: JSON.stringify({name:name,val:val}),
@@ -2067,8 +2108,8 @@ var app = {
     	}
     },
 
-	
-	
+
+
 	register: function(){
     	app.showPage('register_page');
     	$('#birthDate').html(app.getBithDate()).trigger('create');
@@ -2107,7 +2148,7 @@ var app = {
 
 
     	$.ajax({
-    	    url: app.apiUrl + '/api/v3/list/' + entity,
+    	    url: app.apiUrl + '/api/v4/list/' + entity,
     	    success: function(list, status, xhr){
     		   //console.log(JSON.stringify(list));
     		   	var html = '';
