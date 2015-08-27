@@ -57,7 +57,7 @@
 
 	<div id="header">
 		<div id="logo" onclick="app.chooseMainPage();"></div>
-		<div class="new_mes" onclick="app.getMessenger();"><div class="text_mes">תיבת הודעות</div><div class="new_mes_count2"></div></div>
+		<div class="new_mes" onclick="app.pageNumber = 1; app.getMessenger();"><div class="text_mes">תיבת הודעות</div><div class="new_mes_count2"></div></div>
 		<div id="top_right_buttons">
 			<div id="sign_up" onclick="app.register();"><!-- <input type="button" data-theme="a" value="הרשמה" onclick="app.register();" /> --></div>
 			<div id="contact" onclick="app.contact();"></div>
@@ -153,7 +153,7 @@
 				</div>
 
 				<div class="mb_wrap">
-					<div id="mail_box" onclick="app.getMessenger();"><div class="text">תיבת הודעות</div><div id="new_mes_count"></div></div>
+					<div id="mail_box" onclick="app.pageNumber = 1; app.getMessenger();"><div class="text">תיבת הודעות</div><div id="new_mes_count"></div></div>
 				</div>
 
 				<div class="clear"></div>
@@ -196,14 +196,6 @@
 				<div onclick="app.displayUserImages();"><button data-theme="a">נהלו תמונות</button></div>
 				<br>
 				<div onclick="app.showPage('contact_us_page');"><button data-theme="a">צרו קשר</button></div>
-
-
-				<br>
-
-
-				<button data-theme="a" onclick="app.capture(app.pictureSource.CAMERA, app.destinationType.FILE_URI);">הפעילי מצלמה</button>
-
-
 
 				<!--
                 <a href="#" class="mainBut" onclick="app.getOnlineNow();"><div id="friends_online"></div></a>
@@ -846,6 +838,12 @@
 		</figure>
 	</div>
 	<!-- END User Photo Template -->
+
+	<!-- START Loading Bar Template -->
+	<div id="loadingBarTemplate">
+		<div class="loadingBar"></div>
+	</div>
+	<!-- END Loading Bar Template -->
 
 
 	<!-- Start Edit Profile Template -->

@@ -24,7 +24,7 @@ var app = {
 	requestMethod : '',
 	response : '',
 	responseItemsNumber : '',
-	pageNumber : '',
+	pageNumber : 1,
 	itemsPerPage : 30,
 	container : '', 
 	template : '',
@@ -49,16 +49,12 @@ var app = {
 	
 		
 	init: function(){
-		//navigator.splashscreen.hide();
-
-		document.addEventListener("pause", navigator.app.exitApp, false);
-
 		app.ajaxSetup();		
 		app.chooseMainPage();		
 		app.pictureSource = navigator.camera.PictureSourceType;
 		app.destinationType = navigator.camera.DestinationType;
-		app.encodingType = navigator.camera.EncodingType;				
-		//$('#login_page').css({'height':($('#mainContainer').height()-50)+'px !important'});		
+		app.encodingType = navigator.camera.EncodingType;
+		//$('#login_page').css({'height':($('#mainContainer').height()-50)+'px !important'});
 	},
 
 	ajaxSetup: function(){
@@ -197,6 +193,7 @@ var app = {
 			$('#sign_up').hide();
 			//$('#contact').show();
 			if(app.logged == 'nopay'){
+				document.addEventListener("pause", navigator.app.exitApp, false);
 				app.currentPageId = 'main_page';
 				app.currentPageWrapper = $('#'+app.currentPageId);
 				app.currentPageWrapper.find('.mainBut').hide();
@@ -206,6 +203,7 @@ var app = {
 				app.getRegStep();
 			}
 			if(app.logged === true){
+				document.removeEventListener("pause", navigator.app.exitApp, false);
 				app.currentPageId = 'main_page';
 				app.currentPageWrapper = $('#'+app.currentPageId);
 				app.currentPageWrapper.find('.mainBut').show();
@@ -508,8 +506,16 @@ var app = {
 		if(app.currentPageId == 'users_list_page'){
 			app.template = $('#userDataTemplate').html();
 			window.scrollTo(0, app.recentScrollPos);
-			app.setScrollEventHandler();
+			app.setScrollEventHandler(2500,3500);
 		}
+		else if(app.currentPageId == 'messenger_page'){
+        	app.template = $('#messengerTemplate').html();
+        	console.log(app.recentScrollPos);
+        	window.scrollTo(0, app.recentScrollPos);
+        	app.setScrollEventHandler(1000,2000);
+
+        }
+
 		app.searchFuncsMainCall = true;
 		app.stopLoading();
 	},
@@ -594,7 +600,10 @@ var app = {
 
 
 	getUsers: function(){
-		app.startLoading();
+
+		if(app.pageNumber == 1){
+			app.startLoading();
+		}
 
 		if(app.searchFuncsMainCall === true && app.positionSaved === true){
 			$('#sortByEntranceTime').hide();
@@ -635,7 +644,11 @@ var app = {
 	displayUsers: function(){
 		//app.container.parent('div').append('<h1>תוצאות</h1>');
 
+		app.stopLoading();
+
 		if(app.currentPageId == 'users_list_page'){
+
+			$('.loadingHTML').remove();
 
         	var userId = window.localStorage.getItem("userId");
 
@@ -690,7 +703,13 @@ var app = {
 			//setTimeout(app.stopLoading(), 10000);
 			//app.stopLoading();
 			app.responseItemsNumber = app.response.users.itemsNumber;
-			app.setScrollEventHandler();
+
+			if(app.responseItemsNumber == app.itemsPerPage){
+            	var loadingHTML = '<div class="loadingHTML">'+$('#loadingBarTemplate').html()+'</div>';
+            	$(loadingHTML).insertAfter(currentUserNode);
+            }
+
+			app.setScrollEventHandler(2500,3500);
 
 		}
         else{
@@ -698,7 +717,7 @@ var app = {
         }
 	},
 
-
+/*
 	setScrollEventHandler: function(){
 		$(window).scroll(function(){
 			var min=600;
@@ -715,6 +734,45 @@ var app = {
 			}
 		});
 	},
+
+*/
+
+	setScrollEventHandler: function(min1, min2){
+    		$(window).scroll(function(){
+    			//var min=2500;
+
+    			min = min1;
+    			if($(this).width()>767) min = min2;
+
+
+    			app.recentScrollPos = $(this).scrollTop();
+    			console.log('setScrollEventHandler:' + app.recentScrollPos);
+    			console.log(app.recentScrollPos + ':' + app.container.height());
+    //			alert(app.recentScrollPos + ' > ' + app.container.height() +' - ' +min);
+
+
+
+    			if(app.recentScrollPos >= app.container.height()-min){
+    				$(this).unbind("scroll");
+
+    				 //alert(app.recentScrollPos);
+
+
+    				if(app.responseItemsNumber == app.itemsPerPage){
+
+    					app.pageNumber++;
+
+    					 if(app.currentPageId == 'messenger_page'){
+    						 app.getMessenger();
+    					 }
+    					 else{
+    						app.getUsers();
+    					 }
+    				}
+    				//else alert(app.itemsPerPage);
+    			}
+    		});
+    	},
 
 	getMyProfileData: function(){
 		app.startLoading();
@@ -1435,6 +1493,7 @@ var app = {
 	getMessenger: function(){
 
 		if(app.pageNumber == 1){
+			window.scrollTo(0, 0);
         	app.startLoading();
         }
 
@@ -1498,9 +1557,13 @@ var app = {
 
 
 					if(app.responseItemsNumber == app.itemsPerPage){
+
 						var loadingHTML = '<div class="loadingHTML mar_top_8">'+$('#loadingBarTemplate').html()+'</div>';
 						$(loadingHTML).insertAfter(app.container.find('.mail_section:last-child'));
+
+						//app.startLoading();
 					}
+
 				   //else{alert(app.responseItemsNumber +' '+app.itemsPerPage)}
 
 					app.setScrollEventHandler(1000, 2000);
@@ -1808,45 +1871,20 @@ var app = {
 			correctOrientation: true
 		};
 
+		//document.removeEventListener("pause", navigator.app.exitApp, false);
 		navigator.camera.getPicture(app.onPhotoDataSuccess, app.onPhotoDataFail, options);
-
 	},
 
-		capture: function(sourceType, destinationType){
-    		// Take picture using device camera and retrieve image as base64-encoded string
-    		var options = {
-    			quality: 100,
-    			destinationType: destinationType,
-    			sourceType: sourceType,
-    			encodingType: app.encodingType.JPEG,
-    			targetWidth: 600,
-    			targetHeight: 600,
-    			saveToPhotoAlbum: false,
-    			chunkedMode:true,
-    			correctOrientation: true
-    		};
 
-    		navigator.camera.getPicture(app.onPhotoDataSuccess, app.onPhotoDataFail, options);
+    onPhotoDataSuccess: function(imageURI) {
+    	document.addEventListener("pause", navigator.app.exitApp, false);
+   		app.startLoading();
+   		app.uploadPhoto(imageURI);
+   	},
 
-    	},
-
-    	onPhotoDataSuccess: function(imageURI) {
-
-    		app.startLoading();
-    		/*
-    		$("#myNewPhoto").attr("src","data:image/jpeg;base64," + imageURI);
-    		$('#myNewPhoto').Jcrop({
-    			onChange: showPreview,
-    			onSelect: showPreview,
-    			aspectRatio: 1
-    		});
-    		*/
-    		app.uploadPhoto(imageURI);
-    	},
-
-    	onPhotoDataFail: function() {
-
-    	},
+   	onPhotoDataFail: function() {
+		//document.addEventListener("pause", navigator.app.exitApp, false);
+   	},
 
 	uploadPhoto: function(imageURI){
 		var user = window.localStorage.getItem("user");
