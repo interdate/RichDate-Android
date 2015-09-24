@@ -304,6 +304,8 @@ var app = {
 			success: function(data, status){
 				if(data.userId > 0){
 					app.logged = data.logged;
+					window.localStorage.setItem("userId", data.userId);
+                    window.localStorage.setItem("userInput", userInput);
 					app.ajaxSetup();
 					app.showPage('main_page');
 					$('#logout').show();
@@ -317,8 +319,6 @@ var app = {
 					if(app.logged === true){
 						app.currentPageWrapper.find('.mainBut').show();
 					}
-					window.localStorage.setItem("userId", data.userId);
-					window.localStorage.setItem("userInput", userInput);
 					app.loggedUserInit();
 					//document.removeEventListener("backbutton", app.back, false);
 					window.scrollTo(0, 0);
@@ -1760,6 +1760,7 @@ var app = {
 
 	getSubscription: function(){
 		var userId = window.localStorage.getItem("userId");
+		//alert(userId);
 		ref = window.open(app.apiUrl + '/subscription/?userId='+userId+'&app=1', '_blank', 'location=yes');
 		ref.addEventListener('exit', app.chooseMainPage);
 
