@@ -82,15 +82,19 @@ var app = {
 					app.stopLoading();
 					app.showPage('login_page');
 					document.removeEventListener("backbutton", app.back, false);
-					//app.printUsers();					
-					//alert(JSON.stringify(response));
+					//app.printUsers();JSON.stringify();
+					var resp = JSON.parse('{' + response.responseText.split('{')[1]);
+					var url = false;
+					if(typeof resp.url != 'undefined'){
+						url = resp.url;
+					}
 					
 					//alert(JSON.stringify(response.responseText.split('{')));
 					
 					//alert(textStatus);
 					
 					if(app.exit===false){
-						app.alert(response.responseText.split('{')[0]);
+						app.alert(response.responseText.split('{')[0], url);
 					}
 					
 					
@@ -100,7 +104,7 @@ var app = {
 			},
 			
 			error: function(response, textStatus, errorThrown){
-				app.stopLoading();	
+				app.stopLoading();
 				//alert(JSON.stringify(response));
 				//alert(JSON.stringify(textStatus));
 				//alert(JSON.stringify(errorThrown));
@@ -117,10 +121,16 @@ var app = {
 		});		
 	},
 
-	alert: function(message){
+	alert: function(message, url){
+
     	navigator.notification.alert(
     		 message,
-    		 function(){},
+    		 function(){
+    		 	if(typeof url != 'undefined' && url != false){
+                	window.open(url);
+                }
+                return false;
+    		 },
     		 'Notification',
     		 'Ok'
     	);
@@ -323,6 +333,7 @@ var app = {
 					//document.removeEventListener("backbutton", app.back, false);
 					window.scrollTo(0, 0);
 				}
+				//alert(JSON.stringify(data));
 			}
 		});
 	},
@@ -1006,6 +1017,7 @@ var app = {
 
 	sendRegData: function(){
 		if(app.formIsValid()){
+			app.startLoading();
 			var data = JSON.stringify(
 				$('#regForm').serializeObject()
 			);
@@ -1015,19 +1027,19 @@ var app = {
 				type: 'Post',
 				data: data,
 				success: function(response){
-					app.response = response;
-					//alert( JSON.stringify(app.response));
-					if(app.response.result > 0){
+					//alert( JSON.stringify(response));
+					if(response.result > 0){
 						var user = app.container.find("#userEmail").val();
 						var pass = app.container.find("#userPass").val();
 						window.localStorage.setItem("user",user);
 						window.localStorage.setItem("pass",pass);
-						window.localStorage.setItem("userId", app.response.result);
+						window.localStorage.setItem("userId", response.result);
 						app.ajaxSetup();
+						app.response = response;
 						app.getRegStep(data);
 					}
 					else{
-						app.alert(app.response.err);
+						app.alert(response.err);
 					}
 
 					app.stopLoading();
@@ -1051,7 +1063,8 @@ var app = {
     				app.container.find('.regInfo').prepend(app.response.text); /* '. חשבונך טרם הופעל. אנא בדוק את הדוא"ל שלך לצורך הפעלת החשבון.' */
     			}
     			if(typeof app.response.url !== 'undefined'){
-    				window.open(app.response.url, '_blank', 'location=yes');
+    				//window.open(app.response.url, '_blank', 'location=yes');
+    				app.container.find('.continue').attr("onclick", app.response.url)
     			}
     		}
     	}
@@ -1165,6 +1178,19 @@ var app = {
     			return false;
     		}
 
+    		var gender = $('#userGender').val();
+            if(gender == 1){
+				var phoneLen = app.container.find('#userPhone').val().length;
+				if(phoneLen < 10){
+					app.alert('טלפון קצר מדי');
+					return false;
+				}
+				if(phoneLen > 12){
+					app.alert('טלפון שגוי');
+					return false;
+				}
+            }
+
     		if(app.container.find('#aboutMe').val().length < 10){
     			app.alert('על עצמי שגוי (אמור להיות 10 סימנים לפחות)');
     			return false;
@@ -1246,6 +1272,49 @@ var app = {
 			}
 	   });
 	},
+
+	addToFavorites: function(userId){
+    	$.ajax({
+            url: app.apiUrl+'/api/v4/user/favorites/' + userId,
+            type: 'Post',
+            contentType: "application/json; charset=utf-8",
+            error: function(response){
+       			//alert(JSON.stringify(response));
+    		},
+            success: function(response, status, xhr){
+            	if(response.success){
+            		app.alert('משתמש הוסף למועדפים');
+            	}
+            	else{
+            		app.alert('משתמש כבר קיים במועדפים');
+            	}
+
+            	}
+        });
+    },
+
+	addToBlackList: function(userId){
+    	$.ajax({
+            url: app.apiUrl+'/api/v4/user/blacklist/' + userId,
+            type: 'Post',
+            contentType: "application/json; charset=utf-8",
+            error: function(response){
+       			//alert(JSON.stringify(response));
+    		},
+            success: function(response, status, xhr){
+
+            	//alert(JSON.stringify(response));
+            	//return;
+
+            	if(response.success){
+            		app.alert('משתמש הוסף לרשימה שחורה');
+            	}
+            	else{
+            		app.alert('משתמש כבר קיים ברשימה שחורה');
+            	}
+            }
+        });
+    },
 
 
 
@@ -1357,18 +1426,19 @@ var app = {
                 				app.profileLineTemplate = $('#userProfileLineTemplate').html();
                 				app.profileLineTemplate2 = $('#userProfileLineTemplate2').html();
 
-
+/*
                 				var profileButtonsTemplate = $('#userProfileButtonsTemplate').html();
                 			    var profileButtonsTemplate_2 = $('#userProfileButtonsTemplate_2').html();
                 			    profileButtonsTemplate = profileButtonsTemplate.replace(/\[USERNICK\]/g,user.nickName);
                 			    profileButtonsTemplate = profileButtonsTemplate.replace("[USER_ID]", user.userId);
-
+*/
                 			    if(user.userId != window.localStorage.getItem('userId')){
                 				    var profileButtonsTemplate = $('#userProfileButtonsTemplate').html();
                 				    var profileButtonsTemplate_2 = $('#userProfileButtonsTemplate_2').html();
                 				    profileButtonsTemplate = profileButtonsTemplate.replace(/\[USERNICK\]/g,user.nickName);
-                				    profileButtonsTemplate = profileButtonsTemplate.replace("[USER_ID]", user.userId);
-                			    }
+                				    profileButtonsTemplate = profileButtonsTemplate.replace(/\[USER_ID\]/g, user.userId);
+                				    profileButtonsTemplate_2 = profileButtonsTemplate_2.replace(/\[USER_ID\]/g, user.userId);
+                				}
                 			    else{
                 				    var profileButtonsTemplate = '';
                 				    var profileButtonsTemplate_2 = '';
@@ -1882,7 +1952,7 @@ var app = {
 
 
     onPhotoDataSuccess: function(imageURI) {
-    	document.addEventListener("pause", navigator.app.exitApp, false);
+    	//document.addEventListener("pause", navigator.app.exitApp, false);
    		app.startLoading();
    		app.uploadPhoto(imageURI);
    	},
@@ -2170,6 +2240,16 @@ var app = {
     	app.getList('smoking');
     	app.getList('drinking');
     	app.getRegions();
+
+    	$('#userGender').change(function(){
+        	//console.log($(this).val());
+            if($(this).val() == 1){
+            	$('#activate_code_label').show();
+            }
+            else{
+                $('#activate_code_label').hide();
+            }
+        });
     },
 
 
