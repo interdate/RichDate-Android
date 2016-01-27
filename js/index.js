@@ -52,6 +52,7 @@ var app = {
     swiper: null,
     bingoIsActive: false,
     bingos: [],
+    version: '1.7.9',
 
 		
 	init: function(){
@@ -80,6 +81,7 @@ var app = {
 			beforeSend: function(xhr){
 				//alert(user + ':' + pass);
 				xhr.setRequestHeader ("Authorization", "Basic " + btoa ( user + ":" + pass) );
+				xhr.setRequestHeader ("appVersion", app.version);
 			},		
 			statusCode:{
 				
@@ -105,7 +107,11 @@ var app = {
 					
 					
 					 
-				}
+				},
+
+				406: function(response, textStatus, xhr){
+                	$('body').html(response.responseText);
+                }
 		
 			},
 			
@@ -833,6 +839,7 @@ var app = {
 		$.ajax({
 			url: app.apiUrl + '/api/v4/user/profile/'+userId,
 			success: function(user, status, xhr){
+				//alert(JSON.stringify(user));
 				app.showPage('my_profile_page');
 				app.container = app.currentPageWrapper.find('.myProfileWrap');
 				app.container.find('.txt strong').html(user.nickName+', <span>'+user.age+'</span>');
@@ -1347,6 +1354,34 @@ var app = {
         });
     },
 
+    manageLists: function(list, act, userId){
+    		app.startLoading();
+    		//alert(app.apiUrl+'/api/v4/user/managelists/'+ list + '/' + act + '/' + userId);
+        	$.ajax({
+                url: app.apiUrl+'/api/v4/user/managelists/'+ list + '/' + act + '/' + userId,
+                type: 'Post',
+                contentType: "application/json; charset=utf-8",
+                error: function(response){
+           			alert(JSON.stringify(response));
+        		},
+                success: function(response, status, xhr){
+
+                	//alert(JSON.stringify(response));
+                	//return;
+
+                	if(response.success){
+                        app.alert(response.success);
+                        app.container.find('.' + list + act).hide();
+                        if(act == '1'){
+                        	app.container.find('.' + list + '0').show();
+                        }else{
+                        	app.container.find('.' + list + '1').show();
+                        }
+                    }
+                    app.stopLoading();
+                }
+            });
+        },
 
 
 	getUserProfile: function(userId){
@@ -1546,6 +1581,16 @@ var app = {
                                 	document.addEventListener("backbutton", app.closeUserGallery, false);
                                 });
 
+                                var hideFavButton = 0;
+								if(user.is_in_favorite_list){
+									hideFavButton = 1;
+								}
+								var hideBlackButton = 0;
+                                if(user.is_in_black_list){
+                                	hideBlackButton = 1;
+                                }
+                                detailsContainer.find('.favi'  + hideFavButton).hide();
+								detailsContainer.find('.black'  + hideBlackButton).hide();
 
 								app.stopLoading();
 			}
