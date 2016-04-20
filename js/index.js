@@ -52,7 +52,7 @@ var app = {
     swiper: null,
     bingoIsActive: false,
     bingos: [],
-    version: '1.7.9',
+    version: '1.8.1',
 
 		
 	init: function(){
@@ -96,18 +96,11 @@ var app = {
 					if(typeof resp.url != 'undefined'){
 						url = resp.url;
 					}
-					
-					//alert(JSON.stringify(response.responseText.split('{')));
-					
-					//alert(textStatus);
-					
+
 					if(app.exit===false){
 						app.alert(response.responseText.split('{')[0], url);
 					}
-					
-					
-					 
-				},
+                },
 
 				406: function(response, textStatus, xhr){
                 	$('body').html(response.responseText);
@@ -245,11 +238,11 @@ var app = {
 	},
 
 	loggedUserInit: function(){
+        app.pushNotificationInit();
 		app.searchFuncsMainCall = true;
 		app.setBannerDestination();
 		app.checkNewMessages();
 		app.checkBingo();
-		//app.pushNotificationInit();
 		app.sendUserPosition();
 	},
 
@@ -412,7 +405,122 @@ var app = {
 		//window.location.href = 'http://dating4disabled.com/contact.asp';
 	},
 
-	pushNotificationInit: function(){
+	pushNotificationInit: function() {
+
+		var push = PushNotification.init({
+			android: {
+				senderID: "854262669808"
+			}
+		});
+
+		push.on('registration', function (data) {
+			// data.registrationId
+
+			console.log(JSON.stringify(data));
+
+			app.gcmDeviceId = data.registrationId;
+			app.persistGcmDeviceId();
+		});
+
+		push.on('notification', function (data) {
+
+			/*
+			 console.log(JSON.stringify(data));
+
+			 var count = push.getApplicationIconBadgeNumber(app.badgeNumberSuccessHandler, app.badgeNumberErrorHandler);
+
+			 count = count === undefined ? 1 : count + 1;
+
+			 console.log("COUNT: " + count);
+
+			 push.setApplicationIconBadgeNumber(
+			 app.badgeNumberSuccessHandler,
+			 app.badgeNumberErrorHandler,
+			 count
+			 );
+			 */
+
+			 if(!data.additionalData.foreground || app.currentPageId == 'messenger_page'){
+			    app.getMessenger();
+			 }
+        });
+
+		push.on('error', function (e) {
+
+			console.log("PUSH PLUGIN ERROR: " + JSON.stringify(e));
+
+			//e.message
+		});
+
+	},
+
+	persistGcmDeviceId: function(){
+		//alert(app.gcmDeviceId);
+
+		$.ajax({
+			url: app.apiUrl + '/api/v4/user/deviceId/OS:Android',
+			type: 'Post',
+			data: JSON.stringify({deviceId: app.gcmDeviceId}),
+			error: function(data, status){
+				console.log("PUSH ERROR: " + JSON.stringify(data));
+			},
+			success: function(data, status){
+				console.log(JSON.stringify(data));
+			}
+		});
+	},
+
+	getSettings: function(name, value){
+
+		app.startLoading();
+
+
+		$.ajax({
+			url: app.apiUrl + '/api/v4/user/settings',
+			type: 'Get',
+			error: function(response){
+				console.log(JSON.stringify(response));
+			},
+			success: function(response){
+				console.log(response);
+
+				var val  = response.settings.newMessPushNotif == '1' ? 1 : 0;
+				$('#push_notif').val(val).slider("refresh").bind( "change",
+						function(event, ui) {
+							app.changeSettings($(this).attr('name'), $(this).val());
+						}
+				);
+
+
+				app.showPage('settings_page');
+				app.stopLoading();
+			},
+		});
+	},
+
+	changeSettings: function(name, value){
+
+		console.log(value);
+
+		$.ajax({
+			url: app.apiUrl + '/api/v4/user/settings/' + name + '/' + value,
+			type: 'Post',
+			error: function(response){
+				console.log(JSON.stringify(response));
+			},
+			success: function(data){
+				console.log(data);
+
+			},
+		});
+	},
+
+
+
+
+
+
+	/*pushNotificationInit: function(){
 
 		try{
         	pushNotification = window.plugins.pushNotification;
@@ -524,7 +632,7 @@ var app = {
 
     regErrorGCM: function (error) {
     	//alert('error:'+ error);
-    },
+    },*/
 
 	back: function(){
 		$(window).unbind("scroll");

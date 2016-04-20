@@ -2067,3 +2067,9 @@ html, body {height: 100%; position:relative;}
     padding-left: 20px;
 }
 
+.regTxt_2{
+	color:#c8c8c9;
+	font-size:15px;
+	font-weight: bold;
+	text-shadow: none;
+}
