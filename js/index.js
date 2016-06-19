@@ -409,7 +409,9 @@ var app = {
 
 		var push = PushNotification.init({
 			android: {
-				senderID: "854262669808"
+				senderID: "854262669808",
+				icon: "icon",
+				iconColor: "silver",
 			}
 		});
 
@@ -1844,7 +1846,7 @@ var app = {
 		$.ajax({
 			url: app.apiUrl + '/api/v4/user/chat/'+app.chatWith,
 			success: function(response){
-				app.response = response;
+				//app.response = response;
 				app.contactCurrentReadMessagesNumber = app.response.contactCurrentReadMessagesNumber;
 				//alert(JSON.stringify(app.response));
 				app.showPage('chat_page');
@@ -1853,30 +1855,31 @@ var app = {
 				app.container.html('');
 				app.template = $('#chatMessageTemplate').html();
 				app.currentPageWrapper.find('.content_wrap').find("h1 span").text(userNick).attr('onclick','app.getUserProfile(\''+chatWith+'\')');
-				var html = app.buildChat();
-				app.container.html(html);
-				app.subscribtionButtonHandler();
+				var html = app.buildChat(response);
+				//app.container.html(html);
+				$('.chat_wrap').html(html);
+				app.subscribtionButtonHandler(response);
 				app.refreshChat();
 				app.stopLoading();
 			}
 		});
 	},
 
-	subscribtionButtonHandler: function(){
-		if(app.response.chat.abilityReadingMessages == 0){
+	subscribtionButtonHandler: function(response){
+		if(response.chat.abilityReadingMessages == 0){
 			app.container.find('.message_in .buySubscr').show().trigger('create');
 		}
 	},
 
-	buildChat: function(){
+	buildChat: function(response){
 		var html = '';
 		var k = 1;
 		var appendToMessage = '';
 
-		for(var i in app.response.chat.items){
+		for(var i in response.chat.items){
 			var currentTemplate = app.template;
 			//console.log(currentTemplate);
-			var message = app.response.chat.items[i];
+			var message = response.chat.items[i];
 
 			if(app.chatWith == message.from){
             	message.text = message.text + appendToMessage;
@@ -1932,14 +1935,18 @@ var app = {
 				}),
 				success: function(response){
 					//alert(JSON.stringify(response));
-					app.response = response;
-					var html = app.buildChat();
-					app.container.html(html);
-					app.subscribtionButtonHandler();
-					app.refreshChat();
-					if(typeof app.response.error != 'undefined' && app.response.error != ''){
-                    	app.alert(app.response.error);
-                    }
+					//app.response = response;
+					if(app.currentPageId == 'chat_page'){
+						var html = app.buildChat(response);
+						//app.container.html(html);
+						$('.chat_wrap').html(html);
+						app.subscribtionButtonHandler(response);
+						app.refreshChat();
+						
+						if(typeof response.error != 'undefined' && response.error != ''){
+							app.alert(app.response.error);
+						}
+					}
 				},
 				error: function(response){
 					alert(JSON.stringify(response));
@@ -1951,8 +1958,13 @@ var app = {
 
 
 	refreshChat: function(){
+
+		if(refreshChat != ""){
+			refreshChat.abort();
+		}
+		
 		if(app.currentPageId == 'chat_page'){
-			$.ajax({
+			refreshChat = $.ajax({
 				url: app.apiUrl + '/api/v4/user/chat/'+app.chatWith+'/'+app.contactCurrentReadMessagesNumber+'/refresh',
 				type: 'Get',
 				complete: function(response, status, jqXHR){
@@ -1960,22 +1972,31 @@ var app = {
 				},
 				success: function(response){
 					if(app.currentPageId == 'chat_page'){
-						app.response = response;
-						app.contactCurrentReadMessagesNumber = app.response.contactCurrentReadMessagesNumber;
-						var html = app.buildChat();
+						//app.response = response;
+						app.contactCurrentReadMessagesNumber = response.contactCurrentReadMessagesNumber;
+						
 						if(response.chat != false){
-							app.container.html(html);
-							app.subscribtionButtonHandler();
+
+							var html = app.buildChat(response);
+
+							if(app.currentPageId == 'chat_page') {
+
+								if (html != '') {
+									console.log("RESPONSE HTML ::" + html);
+									$('.chat_wrap').html(html);
+								}
+								app.subscribtionButtonHandler(response);
+							}
 						}
 					}
 
-					refresh = setTimeout(app.refreshChat, 100);
+					setTimeout(app.refreshChat, 300);
 
 				}
 			});
 		}
 		else{
-			clearTimeout(refresh);
+			refreshChat.abort();
 		}
 
 	},
