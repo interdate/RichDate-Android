@@ -2599,7 +2599,7 @@ var app = {
                 	app.displayUserImages();
                 }
 
-        		//alert("RESP:" + JSON.stringify(response));
+        		console.log("RESP:" + JSON.stringify(response));
                 if(response.users.itemsNumber > 0){
 					app.showPage('do_likes_page');
                 	//console.log("NUMBER: " + response.users.itemsNumber);
@@ -2624,12 +2624,7 @@ var app = {
 							//html = html + '<div class="swiper-slide">'+i+'</div>';
 
 							html = html + '<div class="swiper-slide"><div id="' + user.id + '" class="cont" style="background-image: url('
-								+ response.users.imagesStoragePath
-								+ '/'
-								+ user.imageId
-								+ '.'
-								+ response.users.imagesExtension
-							+ ')"><div class="nickname" onclick="app.getUserProfile(' + user.id + ')">' + user.nickName + ', '+ user.age +'</div></div></div>';
+								+ user.imageUrl + ')"><div class="nickname" onclick="app.getUserProfile(' + user.id + ')">' + user.nickName + ', '+ user.age +'</div></div></div>';
 
 							//if (i < 3){
 								//wrapper.append(html);
@@ -2738,13 +2733,6 @@ var app = {
 
 						notification.nickName = notification.nickName.replace(/'/g, "׳");
 
-						imageUrl = response.likesNotifications.imagesStoragePath
-							+ '/'
-                            + notification.imageId
-                            + '.'
-                            + response.likesNotifications.imagesExtension
-                        ;
-
                         var isReadClass = (notification.isRead == 1) ? 'isRead' : '';
                         var bingoClass = (notification.bingo == 1) ? 'bingo' : '';
                         var func = (notification.bingo == 1)
@@ -2752,7 +2740,7 @@ var app = {
                         	: "app.getUsersForLikes('" + notification.userId  + "','" + notification.id  + "')"
                         ;
 
-						currentTemplate = currentTemplate.replace("[IMAGE]", imageUrl);
+						currentTemplate = currentTemplate.replace("[IMAGE]", notification.imageUrl);
                     	currentTemplate = currentTemplate.replace(/\[USERNICK\]/g,notification.nickName);
                     	currentTemplate = currentTemplate.replace("[FUNCTION]", func);
                     	currentTemplate = currentTemplate.replace("[TEXT]",notification.template.replace("[USERNICK]", notification.nickName));
@@ -2823,19 +2811,9 @@ var app = {
 				//alert("Bingo " + i + ": " + JSON.stringify(app.bingos[i]));
 				var bingo = app.bingos[i];
 				var template = $('#bingoTemplate').html();
-
-				userImageUrlTemplate = response.bingo.imagesStoragePath
-                	+ '/'
-                    + '[IMAGE_ID]'
-                    + '.'
-                    + response.bingo.imagesExtension
-                ;
-
-                var userImageUrl_1 = userImageUrlTemplate.replace('[IMAGE_ID]', bingo.userImageId_1);
-                var userImageUrl_2 = userImageUrlTemplate.replace('[IMAGE_ID]', bingo.userImageId_2);
-
-				template = template.replace("[USER_IMAGE_URL_1]", userImageUrl_1);
-				template = template.replace("[USER_IMAGE_URL_2]", userImageUrl_2);
+				
+				template = template.replace("[USER_IMAGE_URL_1]", bingo.userImageUrl_1);
+				template = template.replace("[USER_IMAGE_URL_2]", bingo.userImageUrl_2);
 				template = template.replace("[USER_ID]", bingo.userId);
 				template = template.replace(/\[USERNICK\]/g, bingo.nickName);
 
