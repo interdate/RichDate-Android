@@ -2073,3 +2073,8 @@ html, body {height: 100%; position:relative;}
 	font-weight: bold;
 	text-shadow: none;
 }
+
+.myImagesText{
+	color:#c8c8c9;
+	font-size: 16px;
+}

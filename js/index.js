@@ -7,11 +7,12 @@ checkNewMessagesRequest = '';
 newMessages = '';
 refreshChat = '';
 checkBingo = '';
+ref = '';
 
 
 var app = { 
 	
-	apiUrl : 'http://m.richdate.co.il',
+	apiUrl : 'http://m.richdate.co.il.10-100-100-71.wee.co.il',
 	pictureSource : '',
 	destinationType : '',
 	encodingType : '',	
@@ -91,15 +92,19 @@ var app = {
 					app.showPage('login_page');
 					document.removeEventListener("backbutton", app.back, false);
 					//app.printUsers();JSON.stringify();
-					var resp = JSON.parse('{' + response.responseText.split('{')[1]);
+					var resArr = response.responseText.split('{');
+                    if(resArr.length == 1){
+                    	resArr[1] = '}';
+                    }
+                    var resp = JSON.parse('{' + resArr[1]);
 					var url = false;
 					if(typeof resp.url != 'undefined'){
 						url = resp.url;
 					}
 
-					if(app.exit===false){
-						app.alert(response.responseText.split('{')[0], url);
-					}
+					//if(app.exit===false){
+						app.alert(resArr[0], url);
+					//}
                 },
 
 				406: function(response, textStatus, xhr){
@@ -119,6 +124,14 @@ var app = {
 			complete: function(response, status, jqXHR){
 				//alert(response.status);
 				console.log("AJAX COMPLETE");
+				var resp = JSON.parse(response.responseText);
+				//alert(JSON.stringify(resp));
+				if(typeof resp.logged !== 'undefined'){
+				    if(resp.logged !== app.logged){
+				        ref.close();
+                        app.chooseMainPage();
+				    }
+				}
 				app.stopLoading();
 
 
@@ -132,7 +145,7 @@ var app = {
     		 message,
     		 function(){
     		 	if(typeof url != 'undefined' && url != false){
-                	window.open(url);
+                	ref = window.open(url, '_blank', 'location=yes');
                 }
                 return false;
     		 },
@@ -2127,6 +2140,10 @@ var app = {
 				app.container = app.currentPageWrapper.find('.imagesListWrap');
 				app.container.html('');
 				app.template = $('#editImageTemplate').html();
+				if(typeof app.response.text != 'undefined' && app.response.text != '')
+                	app.currentPageWrapper.find('.myImagesText').text(app.response.text).show();
+                else
+                	app.currentPageWrapper.find('.myImagesText').text('').hide();
 				window.scrollTo(0,0);
 
 				//alert(JSON.stringify(app.response));
@@ -2194,7 +2211,7 @@ var app = {
         var ft = new FileTransfer();
         ft.upload(
         	imageURI,
-        	encodeURI("http://m.richdate.co.il/api/v4/user/image"),
+        	encodeURI(app.apiUrl + "/api/v4/user/image"),
         	app.uploadSuccess,
         	app.uploadFailure,
 	        options
@@ -2817,7 +2834,7 @@ var app = {
 				template = template.replace("[USER_ID]", bingo.userId);
 				template = template.replace(/\[USERNICK\]/g, bingo.nickName);
 
-				$('#bingo_page').css({"background":"url('" + userImageUrl_2 + "') no-repeat center center", "background-size":"cover"}).html(template);
+				$('#bingo_page').css({"background":"url('" + bingo.userImageUrl_2 + "') no-repeat center center", "background-size":"cover"}).html(template);
 				app.showPage('bingo_page');
 
 				app.bingoIsActive = true;
