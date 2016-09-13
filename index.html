@@ -173,6 +173,21 @@
 	<!-- End Recovery Page -->
 
 
+	<!-- Start Payment Page -->
+	<div id="payment_page" class="appPage">
+		<div data-role="content" data-scroll="false">
+			<div class="content_wrap">
+				<h1></h1>
+				<div class="dots"></div>
+				<div class="paymentTextBefore">	</div>
+				<div id="payments"></div>
+				<div class="clear"><!--clear--></div>
+			</div>
+		</div>
+	</div>
+	<!-- END Payment Page -->
+
+
 	<!--Start Main Page -->
 	<div id="main_page"  class="appPage">
 		<div data-role="content" data-scroll="false">
@@ -457,7 +472,7 @@
 				<div class="dots"></div>
 				<div class="notText">
 					זה המקום בו תוכלו לקבל התראות בכל פעם שמישהו בזירה פירגן לתמונה שלכם.
-				<br>
+					<br>
 					הודעת בינגו! תופיע במידה ושניכם פירגנתם אחד לשני.
 				</div>
 				<div class="notifications_wrap">
@@ -531,6 +546,7 @@
 				<h1>העלאת תמונה</h1>
 				<div class="dots"></div>
 				<div class="regInfo"></div>
+				<p class="myImagesText"></p>
 				<button class="take_a_photo" data-theme="a" onclick="app.capturePhoto(app.pictureSource.CAMERA, app.destinationType.FILE_URI);">הפעל מצלמה</button>
 				<button class="choose_from_library" data-theme="a" onclick="app.capturePhoto(app.pictureSource.PHOTOLIBRARY, app.destinationType.FILE_URI);">תמונה מגלריה</button>
 				<div class="continue" onclick="app.chooseMainPage();"><button  data-theme="a">המשך</button></div>
@@ -810,6 +826,23 @@
 </div>
 
 <div class="appTemplates">
+
+	<!-- START User Payment Template -->
+	<div id="userPaymentTemplate">
+		<div class="subs" onclick="app.getPayment('[URL]');">
+			<a href="#" title="title" class="ui-link">
+				<span class="subsTitle">[TITLE]</span>
+				[TEXT]<br>
+				<div class="subsPrice">
+					₪<span>[PRICE]</span><br>
+					לחודש
+				</div><!--subsPrice-->
+				<div class="prec">[SALE] הנחה</div>
+				<div class="subsBut"></div>
+			</a>
+		</div>
+	</div>
+	<!-- END User Payment Template -->
 
 	<!-- START User Data Template -->
 	<div id="userDataTemplate">

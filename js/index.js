@@ -8,19 +8,20 @@ newMessages = '';
 refreshChat = '';
 checkBingo = '';
 ref = '';
+checkStatus = '';
 
 
-var app = { 
-	
-	apiUrl : 'http://m.richdate.co.il.10-100-100-71.wee.co.il',
+var app = {
+
+	apiUrl : 'http://m.richdate.co.il',
 	pictureSource : '',
 	destinationType : '',
-	encodingType : '',	
+	encodingType : '',
 	backPage : '',
 	currentPageId : '',
 	currentPageWrapper : '',
 	recentScrollPos : '',
-	
+
 	action : '',
 	requestUrl : '',
 	requestMethod : '',
@@ -28,16 +29,16 @@ var app = {
 	responseItemsNumber : '',
 	pageNumber : 1,
 	itemsPerPage : 30,
-	container : '', 
+	container : '',
 	template : '',
 	statAction : '',
 	searchFuncsMainCall: '',
 	sort: '',
-	
+
 	profileGroupTemplate : '',
 	profileLineTemplate : '',
 	profileLineTemplate2 : '',
-	
+
 	userId : '',
 	reportAbuseUserId : '',
 	gcmDeviceId : '',
@@ -55,10 +56,11 @@ var app = {
     bingos: [],
     version: '1.8.1',
 
-		
+
 	init: function(){
-		app.ajaxSetup();		
-		app.chooseMainPage();		
+		window.open = cordova.InAppBrowser.open;
+		app.ajaxSetup();
+		app.chooseMainPage();
 		app.pictureSource = navigator.camera.PictureSourceType;
 		app.destinationType = navigator.camera.DestinationType;
 		app.encodingType = navigator.camera.EncodingType;
@@ -66,16 +68,16 @@ var app = {
 	},
 
 	ajaxSetup: function(){
-		
+
 		var user = window.localStorage.getItem("user");
 		var pass = window.localStorage.getItem("pass");
-		
+
 		if(user == '' && pass == ''){
 			user = 'nouser';
 			pass = 'nopass';
-		}		
-		
-		$.ajaxSetup({			
+		}
+
+		$.ajaxSetup({
 			dataType: 'json',
 			type: 'Get',
 			timeout: 50000,
@@ -83,11 +85,11 @@ var app = {
 				//alert(user + ':' + pass);
 				xhr.setRequestHeader ("Authorization", "Basic " + btoa ( user + ":" + pass) );
 				xhr.setRequestHeader ("appVersion", app.version);
-			},		
+			},
 			statusCode:{
-				
+
 				403: function(response, textStatus, xhr){
-					
+
 					app.stopLoading();
 					app.showPage('login_page');
 					document.removeEventListener("backbutton", app.back, false);
@@ -110,9 +112,9 @@ var app = {
 				406: function(response, textStatus, xhr){
                 	$('body').html(response.responseText);
                 }
-		
+
 			},
-			
+
 			error: function(response, textStatus, errorThrown){
 				app.stopLoading();
 				//alert(JSON.stringify(response));
@@ -124,10 +126,15 @@ var app = {
 			complete: function(response, status, jqXHR){
 				//alert(response.status);
 				console.log("AJAX COMPLETE");
-				var resp = JSON.parse(response.responseText);
+				var resArr = response.responseText.split('{');
+                if(resArr.length == 1){
+                	resArr[1] = '}';
+                }
+                resArr = resArr.slice(1);
+                var resp = JSON.parse('{' + resArr.join("{"));
 				//alert(JSON.stringify(resp));
 				if(typeof resp.logged !== 'undefined'){
-				    if(resp.logged !== app.logged){
+				    if(resp.logged !== app.logged && resp.userId !== null){
 				        ref.close();
                         app.chooseMainPage();
 				    }
@@ -136,7 +143,7 @@ var app = {
 
 
 			},
-		});		
+		});
 	},
 
 	alert: function(message, url){
@@ -145,7 +152,7 @@ var app = {
     		 message,
     		 function(){
     		 	if(typeof url != 'undefined' && url != false){
-                	ref = window.open(url, '_blank', 'location=yes');
+                	ref = cordova.InAppBrowser.open(url, '_blank', 'location=yes');
                 }
                 return false;
     		 },
@@ -153,9 +160,9 @@ var app = {
     		 'Ok'
     	);
     },
-	
+
 	logout:function(){
-		
+
 		app.startLoading();
 		$(window).unbind('scroll');
         clearTimeout(newMessages);
@@ -173,8 +180,8 @@ var app = {
 		pagesTracker = [];
 		pagesTracker.push('login_page');
 		app.exit = true;
-		
-		$.ajax({				
+
+		$.ajax({
 			url: app.apiUrl + '/api/v4/user/logout',
 			success: function(data, status){
 
@@ -229,9 +236,10 @@ var app = {
 			$('#back').hide();
 			$('#logout').show();
 			$('#sign_up').hide();
-			$('#likesNotifications').css({left:'auto',right:'0px'}).show();
+
 			//$('#contact').show();
 			if(app.logged == 'nopay'){
+				$('#likesNotifications').hide();
 				document.addEventListener("pause", navigator.app.exitApp, false);
 				app.currentPageId = 'main_page';
 				app.currentPageWrapper = $('#'+app.currentPageId);
@@ -239,9 +247,11 @@ var app = {
 				app.getSubscription();
 			}
 			if(app.logged == 'noimg'){
+			    $('#likesNotifications').css({left:'auto',right:'0px'}).show();
 				app.getRegStep();
 			}
 			if(app.logged === true){
+			    $('#likesNotifications').css({left:'auto',right:'0px'}).show();
 				document.removeEventListener("pause", navigator.app.exitApp, false);
 				app.currentPageId = 'main_page';
 				app.currentPageWrapper = $('#'+app.currentPageId);
@@ -277,7 +287,7 @@ var app = {
 		app.exit = false;
 
 		$.ajax({
-			url: app.apiUrl + '/api/v4/user/login',
+			url: app.apiUrl + '/api/v4/user/login1',
 			error: function(response){
 				//alert(JSON.stringify(response));
 			},
@@ -290,6 +300,7 @@ var app = {
 			success: function(data, status){
 				if(data.userId > 0){
 					//alert(data.logged);
+					app.response = data;
 					app.logged = data.logged;
 					window.localStorage.setItem("userId", data.userId);
 					app.UIHandler();
@@ -335,7 +346,7 @@ var app = {
 		window.localStorage.setItem("user",user);
 		window.localStorage.setItem("pass",pass);
 		$.ajax({
-			url: app.apiUrl + '/api/v4/user/login',
+			url: app.apiUrl + '/api/v4/user/login1',
 			beforeSend: function(xhr){
 				user = window.localStorage.getItem("user");
 				pass = window.localStorage.getItem("pass");
@@ -350,6 +361,7 @@ var app = {
 					app.showPage('main_page');
 					$('#logout').show();
 					if(app.logged == 'nopay'){
+					    app.response = data;
 						app.currentPageWrapper.find('.mainBut').hide();
 						app.getSubscription();
 					}
@@ -370,7 +382,7 @@ var app = {
 
 	sendUserPosition: function(){
 		if(app.positionSaved === false){
-			navigator.geolocation.getCurrentPosition(app.persistUserPosition, app.userPositionError);
+			navigator.geolocation.getCurrentPosition(app.persistUserPosition, app.userPositionError, { enableHighAccuracy: true, timeout: 15000 });
 		}
 	},
 
@@ -395,7 +407,8 @@ var app = {
 	},
 
 	userPositionError: function(error){
-		alert('code: '    + error.code    + '\n' +
+	    //alert(error.message);
+		console.log('code: '    + error.code    + '\n' +
 	          'message: ' + error.message + '\n');
 	},
 
@@ -1217,8 +1230,14 @@ var app = {
     	app.showPage('upload_image_page');
     	app.container.find('.regInfo').text('אתם רשאים כעת להעלות תמונה בפורמט JPEG לפרופיל שלכם');  // Also you may upload an image in your profile now.
 
+        if(typeof app.response.text != 'undefined' && app.response.text != '')
+            app.currentPageWrapper.find('.myImagesText').text(app.response.text).show();
+        else
+            app.currentPageWrapper.find('.myImagesText').text('').hide();
+
     	if(data){
     		object = JSON.parse(data);
+
     		if(object.userGender == 1){
     			if(typeof app.response.text !== 'undefined'){
     				app.container.find('.regInfo').prepend(app.response.text); /* '. חשבונך טרם הופעל. אנא בדוק את הדוא"ל שלך לצורך הפעלת החשבון.' */
@@ -1860,7 +1879,7 @@ var app = {
 			url: app.apiUrl + '/api/v4/user/chat/'+app.chatWith,
 			success: function(response){
 				//app.response = response;
-				app.contactCurrentReadMessagesNumber = app.response.contactCurrentReadMessagesNumber;
+				app.contactCurrentReadMessagesNumber = response.contactCurrentReadMessagesNumber;
 				//alert(JSON.stringify(app.response));
 				app.showPage('chat_page');
 				window.scrollTo(0, 0);
@@ -1913,6 +1932,11 @@ var app = {
             	//var isRead = (message.isRead == 0) ? "checked" : "double_checked";
             }
 
+            if(message.from == '0' && message.to == '0'){
+            	currentTemplate = '';
+            	setTimeout(function(){app.alert(message.alert);},500);
+            }
+
 			currentTemplate = currentTemplate.replace("[MESSAGE]", message.text);
             currentTemplate = currentTemplate.replace("[DATE]", message.date);
             currentTemplate = currentTemplate.replace("[TIME]", message.time);
@@ -1955,14 +1979,14 @@ var app = {
 						$('.chat_wrap').html(html);
 						app.subscribtionButtonHandler(response);
 						app.refreshChat();
-						
-						if(typeof response.error != 'undefined' && response.error != ''){
-							app.alert(app.response.error);
+
+						if(typeof response.error != 'undefined' && response.error != '' && response.error != 'null'){
+							app.alert(response.error);
 						}
 					}
 				},
 				error: function(response){
-					alert(JSON.stringify(response));
+					//alert(JSON.stringify(response));
 				}
 			});
 
@@ -1975,7 +1999,7 @@ var app = {
 		if(refreshChat != ""){
 			refreshChat.abort();
 		}
-		
+
 		if(app.currentPageId == 'chat_page'){
 			refreshChat = $.ajax({
 				url: app.apiUrl + '/api/v4/user/chat/'+app.chatWith+'/'+app.contactCurrentReadMessagesNumber+'/refresh',
@@ -1987,7 +2011,7 @@ var app = {
 					if(app.currentPageId == 'chat_page'){
 						//app.response = response;
 						app.contactCurrentReadMessagesNumber = response.contactCurrentReadMessagesNumber;
-						
+
 						if(response.chat != false){
 
 							var html = app.buildChat(response);
@@ -2019,7 +2043,7 @@ var app = {
     	var user = window.localStorage.getItem("user");
     	var pass = window.localStorage.getItem("pass");
 
-    	if(user != '' && pass != '' && app.currentPageId != 'login_page' && app.currentPageId != 'register_page' && app.currentPageId != 'recovery_page'){
+    	if(user != '' && pass != '' && app.currentPageId != 'login_page' && app.currentPageId != 'register_page' && app.currentPageId != 'recovery_page' && app.currentPageId != 'payment_page'){
 
     		checkNewMessagesRequest = $.ajax({
     			url: app.apiUrl + '/api/v4/user/newMessagesCount',
@@ -2031,13 +2055,13 @@ var app = {
     				//alert(response);
     				//app.response = response;
     				//alert(app.response.newMessagesCount);
-    				if(response.newMessagesCount > 0){
+    				if(response.newMessagesCount > 0 && app.logged !== 'nopay'){
     					var count = response.newMessagesCount;
     					//var width = $(document).width();
     					//var pos = width/2 - 30;
     					$('.new_mes_count2').html(count);
     					$('#main_page').css({'padding-top':'25px'});
-    					if(app.logged === true && app.currentPageId != 'login_page' && app.currentPageId != 'register_page' && app.currentPageId != 'recovery_page')
+    					if(app.logged === true && app.currentPageId != 'login_page' && app.currentPageId != 'register_page' && app.currentPageId != 'recovery_page' && app.currentPageId != 'payment_page')
     						$('.new_mes').show();
     					else
     						$('.new_mes').hide();
@@ -2049,14 +2073,21 @@ var app = {
 
     				if(response.newNotificationsCount > 0){
                     	app.newNotificationsCount = response.newNotificationsCount;
-						if(app.currentPageId != 'login_page' && app.currentPageId != 'register_page' && app.currentPageId != 'recovery_page'){
+						if(app.currentPageId != 'login_page' && app.currentPageId != 'register_page' && app.currentPageId != 'recovery_page' && app.currentPageId != 'payment_page'){
                     		$('#likesCount').html(app.newNotificationsCount).show();
+						}else{
+						    $('#likesCount').hide();
 						}
                     }
                     else{
                     	app.newNotificationsCount = 0;
                     	$('#likesCount').hide();
                     	//$('#likesCount').html(app.newNotificationsCount).show();
+                    }
+                    if(app.logged === 'nopay'){
+                        $('#likesNotifications').hide();
+                    }else{
+                        $('#likesNotifications').show();
                     }
     				newMessages = setTimeout(app.checkNewMessages, 10000);
     			}
@@ -2066,15 +2097,54 @@ var app = {
 
     },
 
+    getPayment: function(url){
+        //var userId = window.localStorage.getItem("userId");
+        //alert(userId);
+        //window.open = cordova.InAppBrowser.open;
+        //_self _system _blank
+        ref = cordova.InAppBrowser.open(url, '_system', 'location=no');
+        /*ref.addEventListener('loadstop', function() {
+            ref.executeScript({
+                code: "var newItem = document.createElement('div'); newItem.style.cssText = 'height:50px width:100%; background: url(../../../images/header_bg.png) repeat-x; text-align:center;'; var textnode = document.createTextNode('title'); newItem.app var bButt = document.createElement('IMG'); bButt.src='../../../images/logo.png'; bButt.style.cssText = 'border:none;height:50px;float:left;'; newItem.appendChild(bButt); var list = document.querySelector('body'); list.insertBefore(newItem, list.childNodes[0]);"
+            });
+            //ref.insertCSS({code: '#wrapper{padding-top:50px;background-image: url(../../../images/logo.png); background-repeat:no-repeat; background-position:top center; width:90%;}#logo img{display:none !important;}#logo {width:180px !important;height:50px !important;background: url("http://m.richdate.co.il/images/logo.png") no-repeat top left !important;}#header { background: url("http://m.gobaby.co.il/images/header_bg.png") repeat-x !important; height: 0px !important; border: 0px !important;}'});
+        });
+        */
+        ref.addEventListener('exit', app.chooseMainPage);
+    },
+
 	getSubscription: function(){
-		var userId = window.localStorage.getItem("userId");
+		//var userId = window.localStorage.getItem("userId");
+		/*
 		//alert(userId);
 		ref = window.open(app.apiUrl + '/subscription/?userId='+userId+'&app=1', '_blank', 'location=yes');
 		ref.addEventListener('exit', app.chooseMainPage);
-
-
-
-
+        */
+        //alert(JSON.stringify(app.response));
+        //$('#likesNotifications').hide();
+        var template = $('#userPaymentTemplate').html();
+        var response = app.response.subs;
+        app.showPage('payment_page');
+        $('#likesNotifications').hide();
+        //alert($('#likesNotifications').attr('style'));
+        $('#payment_page h1').html(response.title);
+        $('#payment_page .paymentTextBefore').html(response.textBefore);
+        $('#payment_page #payments').html('');
+        for(var i in response.payments){
+            var payment = response.payments[i];
+            var curentTemplate = template;
+            //payment.url = payment.url.replace("[USERID]", userId);
+            curentTemplate = curentTemplate.replace("[URL]", payment.url);
+            curentTemplate = curentTemplate.replace("[TITLE]", payment.title);
+            curentTemplate = curentTemplate.replace("[TEXT]", payment.text);
+            curentTemplate = curentTemplate.replace("[PRICE]", payment.price);
+            curentTemplate = curentTemplate.replace("[SALE]", payment.sale);
+            $('#payment_page #payments').append(curentTemplate);
+            if(!payment.sale)
+                $('#payment_page #payments .prec').last().remove();
+        }
+        //clearTimeout(checkStatus);
+        //checkStatus = setTimeout(app.chooseMainPage(), 10000);
 		//app.showPage('subscription_page');
 		//$(".subscr_quest").unbind('click');
 		//$(".subscr_quest").click(function(){
@@ -2547,39 +2617,39 @@ var app = {
 
     	app.container.find('.heightList').html(html).trigger("create");
     },
-	
-	
+
+
 	getBithDate: function(){
-		var html;		
+		var html;
 		html = '<div class="left">';
 			html = html + '<select name="userBirthday_d" id="d">';
 				html = html + '<option value="">D</option>';
 				for (var i = 1; i <= 31; i++) {
 					html = html + '<option value="' + i + '">' + i + '</option>';
-				}		
-			html = html + '</select>';		
+				}
+			html = html + '</select>';
 		html = html + '</div>';
-				
+
 		html = html + '<div class="left">';
 			html = html + '<select name="userBirthday_m" id="m">';
 				html = html + '<option value="">M</option>';
 				for (var i = 1; i <= 12; i++) {
 					html = html + '<option value="' + i + '">' + i + '</option>';
-				}		
-			html = html + '</select>';		
+				}
+			html = html + '</select>';
 		html = html + '</div>';
-						
+
 		var curYear = new Date().getFullYear();
-		
+
 		html = html + '<div class="left">';
 			html = html + '<select name="userBirthday_y" id="y">';
 				html = html + '<option value="">Y</option>';
 				for (var i = curYear - 18; i >=1940 ; i--) {
 					html = html + '<option value="' + i + '">' + i + '</option>';
-				}		
-			html = html + '</select>';	
+				}
+			html = html + '</select>';
 		html = html + '</div>';
-		
+
 		return html;
 	},
 
@@ -2671,6 +2741,8 @@ var app = {
 		if(app.swiper != null){
 			app.swiper.destroy();
 		}
+		var height = $(window).height() - 140;
+        $('#do_likes_page').height(height);
 
 		app.swiper = new Swiper ('.swiper-container', {
             // Optional parameters
