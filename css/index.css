@@ -1068,7 +1068,7 @@ a .mail_section{
 	background-color:#e0e1e2;	
 }
 
-.paymentTextBefore{
+.paymentTextBefore, .paymentTextAfter{
     font-size: 13px;
     color: #c8c8c9;
     text-align:center;
@@ -1953,7 +1953,11 @@ margin-left:-20%;
 	background-position: bottom center;
 }
 
-html, body {height: 100%; position:relative;}
+html, body {height: 100%; position:relative; }
+
+html body #do_likes_page, html body #do_likes_page * {
+    direction: ltr;
+}
 
 #do_likes_page{
     width: 100%;

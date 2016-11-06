@@ -366,6 +366,7 @@ var app = {
 						app.getSubscription();
 					}
 					if(app.logged == 'noimg'){
+					    app.response = data;
 						app.getRegStep();
 					}
 					if(app.logged === true){
@@ -1231,16 +1232,16 @@ var app = {
     	app.container.find('.regInfo').text('אתם רשאים כעת להעלות תמונה בפורמט JPEG לפרופיל שלכם');  // Also you may upload an image in your profile now.
 
         if(typeof app.response.text != 'undefined' && app.response.text != '')
-            app.currentPageWrapper.find('.myImagesText').text(app.response.text).show();
+            app.currentPageWrapper.find('.myImagesText').first().html(app.response.text).show();
         else
-            app.currentPageWrapper.find('.myImagesText').text('').hide();
+            app.currentPageWrapper.find('.myImagesText').html('').hide();
 
     	if(data){
     		object = JSON.parse(data);
 
     		if(object.userGender == 1){
     			if(typeof app.response.text !== 'undefined'){
-    				app.container.find('.regInfo').prepend(app.response.text); /* '. חשבונך טרם הופעל. אנא בדוק את הדוא"ל שלך לצורך הפעלת החשבון.' */
+    				//app.container.find('.regInfo').prepend(app.response.text); /* '. חשבונך טרם הופעל. אנא בדוק את הדוא"ל שלך לצורך הפעלת החשבון.' */
     			}
     			if(typeof app.response.url !== 'undefined'){
     				//window.open(app.response.url, '_blank', 'location=yes');
@@ -2129,6 +2130,7 @@ var app = {
         //alert($('#likesNotifications').attr('style'));
         $('#payment_page h1').html(response.title);
         $('#payment_page .paymentTextBefore').html(response.textBefore);
+        $('#payment_page .paymentTextAfter').html(response.textAfter);
         $('#payment_page #payments').html('');
         for(var i in response.payments){
             var payment = response.payments[i];
@@ -2211,9 +2213,10 @@ var app = {
 				app.container.html('');
 				app.template = $('#editImageTemplate').html();
 				if(typeof app.response.text != 'undefined' && app.response.text != '')
-                	app.currentPageWrapper.find('.myImagesText').text(app.response.text).show();
+                	//app.currentPageWrapper.find('.myImagesText').text(app.response.text).show();
+                	app.currentPageWrapper.find('.myImagesText').first().html(app.response.text).show();
                 else
-                	app.currentPageWrapper.find('.myImagesText').text('').hide();
+                	app.currentPageWrapper.find('.myImagesText').html('').hide();
 				window.scrollTo(0,0);
 
 				//alert(JSON.stringify(app.response));
@@ -2700,7 +2703,7 @@ var app = {
 					//alert(response.users.items.length);
 					for(var i in response.users.items){
 
-						if (i < 250){
+						if (i < 200){
 
 							var user = response.users.items[i];
 
@@ -2719,7 +2722,7 @@ var app = {
 							//}
 						//wrapper.append(html);
 						}
-						if (i == 250) break;
+						if (i == 200) break;
 					}
 
 
@@ -2751,7 +2754,7 @@ var app = {
             //spaceBetween: 50,
             loop: true,
             speed: 100,
-            prevButton: '.unlike.icon'
+            nextButton: '.unlike.icon'
 
             // If we need pagination
             //pagination: '.swiper-pagination',
@@ -2770,6 +2773,7 @@ var app = {
 	doLike: function(){
 
 		var userId = $('.swiper-slide-active .cont').attr("id");
+		var swipeIndex = $('.swiper-slide-active').attr('data-swiper-slide-index');
 
 		$.ajax({
         	url: app.apiUrl + '/api/v4/user/like/' + userId,
@@ -2778,9 +2782,10 @@ var app = {
         		console.log("ERROR: " + JSON.stringify(error));
         	},
         	success: function(response){
-        		//console.log("SUCCESS: " + JSON.stringify(response));
-        		app.swiper.slidePrev();
-        		$('#' + userId).parents('.swiper-slide').remove();
+        		console.log("SUCCESS: " + JSON.stringify(response));
+        		//app.swiper.slidePrev();
+        		//$('#' + userId).parents('.swiper-slide').remove();
+        		app.swiper.removeSlide(swipeIndex).updateSlidesSize();
         		app.checkBingo();
         	}
         });
